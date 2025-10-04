@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   CheckSquare,
@@ -7,8 +7,11 @@ import {
   Calendar,
   Upload,
   User,
+  DollarSign,
+  FileText,
 } from 'lucide-react';
 import { KPICard } from '../../components/dashboard/KPICard';
+import { BudgetTicketingSystem } from '../../components/budget/BudgetTicketingSystem';
 import { formatDate, getStatusColor, getPriorityColor } from '../../utils/formatters';
 import { Task, Budget, Script, User as UserType } from '../../api/endpoints';
 
@@ -23,6 +26,8 @@ export const CrewDashboard: React.FC<CrewDashboardProps> = ({
   user,
   tasks,
 }) => {
+  const [activeTab, setActiveTab] = useState('overview');
+  
   const myTasks = tasks.filter(task => task.assigneeId === user.id);
   const completedTasks = myTasks.filter(task => task.status === 'done').length;
   const inProgressTasks = myTasks.filter(task => task.status === 'in_progress').length;
@@ -35,10 +40,56 @@ export const CrewDashboard: React.FC<CrewDashboardProps> = ({
     .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
     .slice(0, 5);
 
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: CheckSquare },
+    { id: 'budget-requests', label: 'Budget Requests', icon: DollarSign },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
+            Crew Dashboard
+          </h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+            Welcome back, {user.name}
+          </p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="border-b border-gray-200 dark:border-gray-700">
+        <nav className="flex space-x-1 sm:space-x-8 overflow-x-auto">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center space-x-2 py-2 px-3 sm:px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">
+                  {tab.id === 'overview' ? 'Overview' : 'Requests'}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'overview' && (
+        <div className="space-y-6">
+          {/* KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <KPICard
           title="My Tasks"
           value={myTasks.length}
@@ -207,6 +258,22 @@ export const CrewDashboard: React.FC<CrewDashboardProps> = ({
           </button>
         </div>
       </motion.div>
+        </div>
+      )}
+
+      {/* Budget Requests Tab */}
+      {activeTab === 'budget-requests' && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          <BudgetTicketingSystem 
+            currentUser={user.name} 
+            currentUserRole={user.role} 
+          />
+        </motion.div>
+      )}
     </div>
   );
 };

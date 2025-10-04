@@ -9,6 +9,7 @@ import { DirectorDashboard } from './DirectorDashboard';
 import { CrewDashboard } from './CrewDashboard';
 import { VFXDashboard } from './VFXDashboard';
 import { ProductionManagerDashboard } from './ProductionManagerDashboard';
+import { DistributionManagerDashboard } from './DistributionManagerDashboard';
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -49,6 +50,8 @@ export const Dashboard: React.FC = () => {
         return <CrewDashboard {...dashboardProps} />;
       case 'VFX':
         return <VFXDashboard {...dashboardProps} />;
+      case 'Distribution Manager':
+        return <DistributionManagerDashboard {...dashboardProps} />;
       default:
         return <ProducerDashboard {...dashboardProps} />;
     }

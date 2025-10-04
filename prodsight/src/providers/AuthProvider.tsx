@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { authApi, User } from '../api/endpoints';
+import { logger } from '../utils/logger';
 import { Role, ROLE_PERMISSIONS } from '../utils/permissions';
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  token: string | null;
   error: string | null;
 }
 
@@ -72,6 +74,7 @@ const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
   isLoading: false,
+  token: null,
   error: null,
 };
 
@@ -89,31 +92,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const user = JSON.parse(storedUser);
         dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-      } catch (error) {
         localStorage.removeItem('prodsight_user');
+      } catch (error) {
+        // Handle parsing error
       }
     }
   }, []);
 
+  const demoUsers = [
+    { username: 'director', password: 'password123', role: 'Director', name: 'John Director' },
+    { username: 'producer', password: 'password123', role: 'Producer', name: 'Jane Producer' },
+    { username: 'prodmanager', password: 'password123', role: 'Production Manager', name: 'Production Manager' },
+    { username: 'distmanager', password: 'password123', role: 'Distribution Manager', name: 'Distribution Manager' },
+    { username: 'crew', password: 'password123', role: 'Crew', name: 'Crew Member' },
+    { username: 'vfx', password: 'password123', role: 'VFX', name: 'VFX Artist' },
+  ];
+
   const login = async (username: string, password: string): Promise<void> => {
+    logger.info('Login attempt started', 'AuthProvider', { username });
     dispatch({ type: 'LOGIN_START' });
     
     try {
       const response = await authApi.login(username, password);
       
       if (response.success && response.data) {
-        // Add role-based permissions
-        const userWithPermissions = {
-          ...response.data,
-          permissions: ROLE_PERMISSIONS[response.data.role as Role] || []
-        };
-        
-        localStorage.setItem('prodsight_user', JSON.stringify(userWithPermissions));
-        dispatch({ type: 'LOGIN_SUCCESS', payload: userWithPermissions });
+        const demoUser = demoUsers.find(user => user.username === username && user.password === password);
+        if (demoUser) {
+          const userWithPermissions = {
+            ...demoUser,
+            id: demoUser.username,
+            email: `${demoUser.username}@prodsight.com`,
+            avatar: '',
+            permissions: ROLE_PERMISSIONS[demoUser.role as Role] || []
+          };
+          
+          localStorage.setItem('prodsight_user', JSON.stringify(userWithPermissions));
+          logger.info('Login successful', 'AuthProvider', { 
+            username, 
+            role: userWithPermissions.role 
+          });
+          dispatch({ type: 'LOGIN_SUCCESS', payload: userWithPermissions });
+        } else {
+          logger.warn('Login failed - invalid credentials', 'AuthProvider', { username });
+          dispatch({ type: 'LOGIN_FAILURE', payload: 'Invalid credentials' });
+        }
       } else {
+        logger.warn('Login failed - API response error', 'AuthProvider', { username });
         dispatch({ type: 'LOGIN_FAILURE', payload: 'Login failed' });
       }
     } catch (error: any) {
+      logger.error('Login error', 'AuthProvider', { username, error: error.message }, error);
       dispatch({ 
         type: 'LOGIN_FAILURE', 
         payload: error.message || 'An error occurred during login' 
@@ -136,7 +164,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const hasAnyPermission = (permissions: string[]): boolean => {
     if (!state.user?.permissions) return false;
-    return permissions.some(permission => state.user.permissions.includes(permission));
+    return permissions.some(permission => state.user!.permissions.includes(permission));
   };
 
   const contextValue: AuthContextType = {

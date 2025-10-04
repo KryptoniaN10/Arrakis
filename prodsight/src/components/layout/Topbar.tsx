@@ -106,5 +106,6 @@ export const Topbar: React.FC<TopbarProps> = ({
         </div>
       </div>
     </motion.header>
+    
   );
 };

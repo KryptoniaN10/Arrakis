@@ -14,9 +14,14 @@ export type Permission =
   | 'view_vfx_tasks'
   | 'upload_versions'
   | 'request_review'
-  | 'view_schedule';
+  | 'view_schedule'
+  | 'manage_distribution'
+  | 'manage_platforms'
+  | 'view_analytics'
+  | 'manage_marketing'
+  | 'manage_releases';
 
-export type Role = 'Producer' | 'Production Manager' | 'Director' | 'Crew' | 'VFX';
+export type Role = 'Producer' | 'Production Manager' | 'Director' | 'Crew' | 'VFX' | 'Distribution Manager';
 
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   'Producer': [
@@ -52,6 +57,15 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'request_review',
     'view_assigned_tasks',
     'update_task_status'
+  ],
+  'Distribution Manager': [
+    'manage_distribution',
+    'manage_platforms',
+    'view_analytics',
+    'manage_marketing',
+    'manage_releases',
+    'view_reports',
+    'view_all'
   ]
 };
 

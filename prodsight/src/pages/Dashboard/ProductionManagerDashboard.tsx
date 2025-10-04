@@ -13,13 +13,23 @@ import {
   Receipt,
   FileText,
   BarChart3,
-  Zap
+  Zap,
+  FolderOpen
 } from 'lucide-react';
 import { KPICard } from '../../components/dashboard/KPICard';
 import { ExpenseTracker } from '../../components/expense/ExpenseTracker';
 import { AdminControlPanel } from '../../components/admin/AdminControlPanel';
 import { AISchedulingSystem } from '../../components/scheduling/AISchedulingSystem';
 import { CrewCoordination } from '../../components/crew/CrewCoordination';
+import { EnhancedVFXPipeline } from '../../components/vfx/EnhancedVFXPipeline';
+import { BudgetTicketingSystem } from '../../components/budget/BudgetTicketingSystem';
+import { ManualExpenseEntry } from '../../components/budget/ManualExpenseEntry';
+import { AIScriptBreakdown } from '../../components/script/AIScriptBreakdown';
+import { AIBudgetAllocation } from '../../components/budget/AIBudgetAllocation';
+import { AILocationVFXSuggestions } from '../../components/ai/AILocationVFXSuggestions';
+import { GoogleCalendarIntegration } from '../../components/scheduling/GoogleCalendarIntegration';
+import { AICallSheets } from '../../components/scheduling/AICallSheets';
+import { AssetsManager } from '../../components/assets/AssetsManager';
 import { formatCurrency, getPriorityColor } from '../../utils/formatters';
 import { Task, Budget, Script, User } from '../../api/endpoints';
 
@@ -60,7 +70,14 @@ export const ProductionManagerDashboard: React.FC<ProductionManagerDashboardProp
     { id: 'admin', label: 'Admin Control', icon: Shield },
     { id: 'scheduling', label: 'Scheduling', icon: Calendar },
     { id: 'crew', label: 'Crew Coordination', icon: Users },
+    { id: 'assets', label: 'Assets Management', icon: FolderOpen },
+    { id: 'vfx', label: 'VFX Pipeline', icon: Zap },
+    { id: 'script', label: 'Script Breakdown', icon: FileText },
+    { id: 'budget', label: 'Budget Management', icon: DollarSign },
     { id: 'expenses', label: 'Expense Tracking', icon: Receipt },
+    { id: 'ai-suggestions', label: 'AI Suggestions', icon: Zap },
+    { id: 'calendar', label: 'Calendar Sync', icon: Calendar },
+    { id: 'callsheets', label: 'Call Sheets', icon: FileText },
     { id: 'reports', label: 'Final Reports', icon: FileText }
   ];
 
@@ -447,6 +464,112 @@ export const ProductionManagerDashboard: React.FC<ProductionManagerDashboardProp
             className="space-y-6"
           >
             <CrewCoordination currentUser={user.name} />
+          </motion.div>
+        )}
+
+        {activeTab === 'assets' && (
+          <motion.div
+            key="assets"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="space-y-6"
+          >
+            <AssetsManager currentUser={user.name} />
+          </motion.div>
+        )}
+
+        {activeTab === 'vfx' && (
+          <motion.div
+            key="vfx"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="space-y-6"
+          >
+            <EnhancedVFXPipeline />
+          </motion.div>
+        )}
+
+        {activeTab === 'script' && (
+          <motion.div
+            key="script"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="space-y-6"
+          >
+            <AIScriptBreakdown currentUser={user.name} />
+          </motion.div>
+        )}
+
+        {activeTab === 'budget' && (
+          <motion.div
+            key="budget"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="space-y-6"
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                  Budget Requests & Ticketing
+                </h3>
+                <BudgetTicketingSystem 
+                  currentUser={user.name} 
+                  currentUserRole="Production Manager" 
+                />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                  Manual Expense Entry
+                </h3>
+                <ManualExpenseEntry currentUser={user.name} />
+              </div>
+            </div>
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                AI Budget Allocation Assistant
+              </h3>
+              <AIBudgetAllocation totalBudget={budget?.total || 5000000} />
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'ai-suggestions' && (
+          <motion.div
+            key="ai-suggestions"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="space-y-6"
+          >
+            <AILocationVFXSuggestions />
+          </motion.div>
+        )}
+
+        {activeTab === 'calendar' && (
+          <motion.div
+            key="calendar"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="space-y-6"
+          >
+            <GoogleCalendarIntegration />
+          </motion.div>
+        )}
+
+        {activeTab === 'callsheets' && (
+          <motion.div
+            key="callsheets"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="space-y-6"
+          >
+            <AICallSheets />
           </motion.div>
         )}
 

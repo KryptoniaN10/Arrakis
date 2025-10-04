@@ -10,6 +10,16 @@ import {
   Clock,
   Users,
   MapPin,
+  Save,
+  MessageCircle,
+  Bot,
+  Play,
+  Pause,
+  Search,
+  Filter,
+  Trash2,
+  Plus,
+  Download,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
@@ -18,13 +28,29 @@ import { useScript } from '../../hooks/useScript';
 import { useAI } from '../../hooks/useAI';
 import { formatDate, getStatusColor } from '../../utils/formatters';
 
+interface ChatMessage {
+  id: string;
+  type: 'user' | 'ai';
+  content: string;
+  timestamp: Date;
+}
+
 export const Script: React.FC = () => {
   const { script, loading, updateScene } = useScript();
   const { breakdownScript, loading: aiLoading } = useAI();
+  const [activeTab, setActiveTab] = useState('overview');
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showBreakdownModal, setShowBreakdownModal] = useState(false);
-  const [scriptText, setScriptText] = useState('');
+  const [scriptText, setScriptText] = useState('# SAMPLE SCRIPT\n\nFADE IN:\n\nEXT. MUMBAI STREET - DAY\n\nA bustling street scene with vendors and pedestrians.\n\nINT. COFFEE SHOP - DAY\n\nRAHUL sits across from PRIYA, discussing their project.\n\nRAHUL\nThis AI system will revolutionize film production.\n\nPRIYA\n(excited)\nImagine the possibilities!\n\nFADE OUT.');
   const [breakdown, setBreakdown] = useState<any>(null);
+  const [isEditingScript, setIsEditingScript] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [editingScene, setEditingScene] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
 
   const handleScriptUpload = async () => {
     if (scriptText.trim()) {
@@ -35,6 +61,68 @@ export const Script: React.FC = () => {
         setShowBreakdownModal(true);
       }
     }
+  };
+
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: FileText },
+    { id: 'editor', label: 'Script Editor', icon: Edit },
+    { id: 'breakdown', label: 'Scene Breakdown', icon: Zap },
+  ];
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadedFileName(file.name);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        setScriptText(content);
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const saveScript = () => {
+    setIsEditingScript(false);
+    console.log('Script saved:', scriptText);
+    // Here you would typically save to backend
+  };
+
+  const handleChatSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: chatInput,
+      timestamp: new Date()
+    };
+
+    setChatMessages(prev => [...prev, userMessage]);
+
+    // Simulate AI response
+    setTimeout(() => {
+      const aiResponse: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: `Based on your question about "${chatInput}", I can help you with script analysis, scene breakdown, character development, or production planning. What specific aspect would you like me to focus on?`,
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, aiResponse]);
+    }, 1000);
+
+    setChatInput('');
+  };
+
+  const handleScriptBreakdown = () => {
+    const newMessage: ChatMessage = {
+      id: Date.now().toString(),
+      type: 'ai',
+      content: `I've analyzed your script and identified key scenes, characters, and locations. The breakdown includes production requirements and VFX needs. Would you like me to elaborate on any specific aspect?`,
+      timestamp: new Date()
+    };
+    setChatMessages(prev => [...prev, newMessage]);
   };
 
   const handleSceneStatusUpdate = async (sceneId: string, status: string) => {
@@ -55,32 +143,69 @@ export const Script: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="space-y-6"
+        className="space-y-4 sm:space-y-6"
       >
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
               Script Management
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Upload and analyze scripts with AI-powered breakdown
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+              Upload, edit and analyze scripts with AI-powered breakdown
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3">
             <Button
               variant="secondary"
               onClick={() => setShowUploadModal(true)}
+              className="text-sm"
             >
               <Upload className="h-4 w-4 mr-2" />
-              Upload Script
+              <span className="hidden sm:inline">Upload Script</span>
+              <span className="sm:hidden">Upload</span>
             </Button>
-            <Button>
-              <Zap className="h-4 w-4 mr-2" />
-              AI Breakdown
+            <Button
+              onClick={() => setIsChatOpen(!isChatOpen)}
+              className="text-sm"
+            >
+              <MessageCircle className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">AI Assistant</span>
+              <span className="sm:hidden">AI</span>
             </Button>
           </div>
         </div>
+
+        {/* Tabs */}
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <nav className="flex space-x-1 sm:space-x-8 overflow-x-auto">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center space-x-2 py-2 px-3 sm:px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">
+                    {tab.id === 'overview' ? 'Overview' : 
+                     tab.id === 'editor' ? 'Editor' : 'Breakdown'}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
 
         {/* Script Overview */}
         {script && (
@@ -386,6 +511,325 @@ export const Script: React.FC = () => {
             </div>
           )}
         </Modal>
+
+        {/* Script Editor Tab */}
+        {activeTab === 'editor' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Script Editor</h2>
+                  {uploadedFileName && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Current file: {uploadedFileName}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center space-x-2">
+                  {isEditingScript ? (
+                    <>
+                      <button
+                        onClick={saveScript}
+                        className="inline-flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Script
+                      </button>
+                      <button
+                        onClick={() => setIsEditingScript(false)}
+                        className="inline-flex items-center px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <input
+                        type="file"
+                        accept=".txt,.pdf,.doc,.docx"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        id="script-upload"
+                      />
+                      <label
+                        htmlFor="script-upload"
+                        className="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload File
+                      </label>
+                      <button
+                        onClick={() => setIsEditingScript(true)}
+                        className="inline-flex items-center px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Script
+                      </button>
+                      <button
+                        onClick={handleScriptBreakdown}
+                        className="inline-flex items-center px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        <Bot className="h-4 w-4 mr-2" />
+                        AI Breakdown
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {isEditingScript ? (
+                <textarea
+                  value={scriptText}
+                  onChange={(e) => setScriptText(e.target.value)}
+                  className="w-full h-96 p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter your script here..."
+                />
+              ) : (
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 h-96 overflow-y-auto">
+                  <pre className="text-sm text-gray-900 dark:text-gray-100 font-mono whitespace-pre-wrap">
+                    {scriptText || 'No script loaded. Upload a file or click "Edit Script" to start writing.'}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Scene Breakdown Tab */}
+        {activeTab === 'breakdown' && script && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            {/* Controls */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 gap-4">
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 flex-1">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search scenes..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="draft">Draft</option>
+                    <option value="in_review">In Review</option>
+                    <option value="approved">Approved</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Enhanced Scenes Table */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Scene</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Description</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Location</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Duration</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">VFX</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Status</th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {script.scenes.map((scene) => (
+                      <tr key={scene.id} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td className="py-3 px-4">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-medium text-gray-900 dark:text-gray-100">
+                              {scene.number}
+                            </span>
+                            {scene.vfx && <Zap className="h-4 w-4 text-purple-500" />}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          {editingScene === scene.id ? (
+                            <input
+                              type="text"
+                              defaultValue={scene.description}
+                              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            />
+                          ) : (
+                            <div className="max-w-xs">
+                              <div className="truncate" title={scene.description}>
+                                {scene.description}
+                              </div>
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
+                          {editingScene === scene.id ? (
+                            <input
+                              type="text"
+                              defaultValue={scene.location}
+                              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            />
+                          ) : (
+                            scene.location
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
+                          {editingScene === scene.id ? (
+                            <input
+                              type="number"
+                              defaultValue={scene.estimatedDuration}
+                              className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            />
+                          ) : (
+                            `${scene.estimatedDuration}m`
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          {scene.vfx ? (
+                            <Zap className="h-4 w-4 text-purple-500" />
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          {editingScene === scene.id ? (
+                            <select
+                              defaultValue={scene.status}
+                              className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            >
+                              <option value="draft">Draft</option>
+                              <option value="in_review">In Review</option>
+                              <option value="approved">Approved</option>
+                            </select>
+                          ) : (
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(scene.status)}`}>
+                              {scene.status.replace('_', ' ')}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center justify-end space-x-1">
+                            {editingScene === scene.id ? (
+                              <>
+                                <button
+                                  onClick={() => setEditingScene(null)}
+                                  className="p-1 text-green-600 hover:text-green-800 transition-colors"
+                                >
+                                  <Save className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => setEditingScene(null)}
+                                  className="p-1 text-gray-600 hover:text-gray-800 transition-colors"
+                                >
+                                  <Pause className="h-4 w-4" />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => setEditingScene(scene.id)}
+                                  className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button className="p-1 text-gray-600 hover:text-gray-800 transition-colors">
+                                  <Eye className="h-4 w-4" />
+                                </button>
+                                <button className="p-1 text-red-600 hover:text-red-800 transition-colors">
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </motion.div>
+        )}
+          </div>
+        )}
+
+        {/* AI Chatbot */}
+        {isChatOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="fixed bottom-4 right-4 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50"
+          >
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center space-x-2">
+                <Bot className="h-5 w-5 text-blue-500" />
+                <h3 className="font-medium text-gray-900 dark:text-gray-100">AI Script Assistant</h3>
+              </div>
+              <button
+                onClick={() => setIsChatOpen(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <Pause className="h-4 w-4" />
+              </button>
+            </div>
+            
+            <div className="h-64 overflow-y-auto p-4 space-y-3">
+              {chatMessages.length === 0 ? (
+                <div className="text-center text-gray-500 dark:text-gray-400 text-sm">
+                  Ask me about your script analysis, scene breakdown, or production planning!
+                </div>
+              ) : (
+                chatMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
+                        message.type === 'user'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                      }`}
+                    >
+                      {message.content}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            <form onSubmit={handleChatSubmit} className="p-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Ask about your script..."
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button
+                  type="submit"
+                  className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                >
+                  <Play className="h-4 w-4" />
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        )}
       </motion.div>
     </RoleGuard>
   );

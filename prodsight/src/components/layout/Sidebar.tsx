@@ -11,12 +11,15 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  ArrowLeft,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { canAccessRoute } from '../../utils/permissions';
 
 interface SidebarProps {
   isCollapsed: boolean;
+  isMobileOpen?: boolean;
+  onClose?: () => void;
+  id?: string;
 }
 
 const navigationItems = [
@@ -64,7 +67,12 @@ const navigationItems = [
   },
 ];
 
-export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ 
+  isCollapsed, 
+  isMobileOpen, 
+  onClose, 
+  id 
+}) => {
   const { user, logout, hasAnyPermission } = useAuth();
   const location = useLocation();
 
@@ -78,10 +86,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
 
   return (
     <motion.div
+      id={id}
       initial={false}
       animate={{ width: isCollapsed ? 80 : 256 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className="bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col h-full"
+      className="bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col h-full w-64 md:w-auto"
     >
       {/* Logo */}
       <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -136,7 +145,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
       </nav>
 
       {/* User Profile & Settings */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        {/* Back to Dashboard - only show when not on dashboard */}
+        {location.pathname !== '/dashboard' && (
+          <NavLink
+            to="/dashboard"
+            className="sidebar-link bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+          >
+            <ArrowLeft className="h-5 w-5 flex-shrink-0" />
+            {!isCollapsed && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className="ml-3 text-sm font-medium"
+              >
+                Back to Dashboard
+              </motion.span>
+            )}
+          </NavLink>
+        )}
+
+        {/* Settings */}
         <NavLink
           to="/settings"
           className="sidebar-link"

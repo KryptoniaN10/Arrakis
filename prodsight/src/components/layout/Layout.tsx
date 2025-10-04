@@ -5,6 +5,7 @@ import { Topbar } from './Topbar';
 
 export const Layout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // For mobile sidebar overlay
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Initialize dark mode from localStorage
@@ -29,20 +30,58 @@ export const Layout: React.FC = () => {
   }, [isDarkMode]);
 
   const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
+    // On desktop, toggle collapsed state
+    // On mobile, toggle overlay
+    if (window.innerWidth >= 768) {
+      setSidebarCollapsed(!sidebarCollapsed);
+    } else {
+      setSidebarOpen(!sidebarOpen);
+    }
   };
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
   };
 
+  // Close mobile sidebar when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sidebarOpen && window.innerWidth < 768) {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar && !sidebar.contains(event.target as Node)) {
+          setSidebarOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [sidebarOpen]);
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      
       {/* Sidebar */}
-      <Sidebar isCollapsed={sidebarCollapsed} />
+      <div className={`${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      } md:translate-x-0 fixed md:static inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out`}>
+        <Sidebar 
+          id="sidebar"
+          isCollapsed={sidebarCollapsed} 
+          isMobileOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+      </div>
       
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden w-full md:w-auto">
         {/* Topbar */}
         <Topbar
           onToggleSidebar={toggleSidebar}
@@ -51,7 +90,7 @@ export const Layout: React.FC = () => {
         />
         
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
           <Outlet />
         </main>
       </div>

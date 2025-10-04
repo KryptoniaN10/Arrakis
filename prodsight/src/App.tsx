@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Login } from './pages/Auth/Login';
 import { Dashboard } from './pages/Dashboard/Dashboard';
 import { useAuth } from './hooks/useAuth';
+import { logger } from './utils/logger';
 
 // Import actual page components
 import { Tasks } from './pages/Tasks/Tasks';
@@ -19,6 +20,14 @@ const Settings = () => <div className="p-6">Settings Page - Coming Soon</div>;
 
 function App() {
   const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    logger.info('Application initialized', 'App', {
+      isAuthenticated,
+      userAgent: navigator.userAgent,
+      url: window.location.href
+    });
+  }, [isAuthenticated]);
 
   return (
     <Routes>

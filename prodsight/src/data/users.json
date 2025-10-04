@@ -48,5 +48,15 @@
     "username": "vfx",
     "password": "password123",
     "permissions": ["view_vfx_tasks", "upload_versions", "request_review"]
+  },
+  {
+    "id": "6",
+    "name": "David Kumar",
+    "role": "Distribution Manager",
+    "email": "david@prodsight.com",
+    "avatar": "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+    "username": "distmanager",
+    "password": "password123",
+    "permissions": ["manage_distribution", "view_analytics", "manage_platforms", "view_revenue"]
   }
 ]
