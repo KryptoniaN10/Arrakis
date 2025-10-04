@@ -1,0 +1,202 @@
+import React from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import {
+  LayoutDashboard,
+  CheckSquare,
+  DollarSign,
+  FileText,
+  FolderOpen,
+  Zap,
+  BarChart3,
+  Settings,
+  LogOut,
+} from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { canAccessRoute } from '../../utils/permissions';
+
+interface SidebarProps {
+  isCollapsed: boolean;
+}
+
+const navigationItems = [
+  {
+    name: 'Dashboard',
+    href: '/dashboard',
+    icon: LayoutDashboard,
+    permissions: ['view_all', 'view_tasks', 'view_assigned_tasks', 'view_vfx_tasks'],
+  },
+  {
+    name: 'Tasks',
+    href: '/tasks',
+    icon: CheckSquare,
+    permissions: ['manage_tasks', 'view_assigned_tasks', 'view_vfx_tasks'],
+  },
+  {
+    name: 'Budget',
+    href: '/budget',
+    icon: DollarSign,
+    permissions: ['edit_budget', 'view_all'],
+  },
+  {
+    name: 'Script',
+    href: '/script',
+    icon: FileText,
+    permissions: ['manage_script', 'ai_breakdown'],
+  },
+  {
+    name: 'Assets',
+    href: '/assets',
+    icon: FolderOpen,
+    permissions: ['upload_assets', 'view_all'],
+  },
+  {
+    name: 'VFX',
+    href: '/vfx',
+    icon: Zap,
+    permissions: ['view_vfx_tasks', 'upload_versions', 'request_review'],
+  },
+  {
+    name: 'Reports',
+    href: '/reports',
+    icon: BarChart3,
+    permissions: ['view_reports', 'view_all'],
+  },
+];
+
+export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
+  const { user, logout, hasAnyPermission } = useAuth();
+  const location = useLocation();
+
+  const handleLogout = () => {
+    logout();
+  };
+
+  const filteredNavItems = navigationItems.filter(item =>
+    hasAnyPermission(item.permissions)
+  );
+
+  return (
+    <motion.div
+      initial={false}
+      animate={{ width: isCollapsed ? 80 : 256 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      className="bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col h-full"
+    >
+      {/* Logo */}
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center">
+          <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-lg">P</span>
+          </div>
+          {!isCollapsed && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="ml-3"
+            >
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                ProdSight
+              </h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                AI-Powered Production
+              </p>
+            </motion.div>
+          )}
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 p-4 space-y-2">
+        {filteredNavItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = location.pathname === item.href;
+
+          return (
+            <NavLink
+              key={item.name}
+              to={item.href}
+              className={`sidebar-link ${isActive ? 'active' : ''}`}
+            >
+              <Icon className="h-5 w-5 flex-shrink-0" />
+              {!isCollapsed && (
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                  className="ml-3 text-sm font-medium"
+                >
+                  {item.name}
+                </motion.span>
+              )}
+            </NavLink>
+          );
+        })}
+      </nav>
+
+      {/* User Profile & Settings */}
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+        <NavLink
+          to="/settings"
+          className="sidebar-link"
+        >
+          <Settings className="h-5 w-5 flex-shrink-0" />
+          {!isCollapsed && (
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="ml-3 text-sm font-medium"
+            >
+              Settings
+            </motion.span>
+          )}
+        </NavLink>
+
+        <button
+          onClick={handleLogout}
+          className="sidebar-link w-full text-left hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
+        >
+          <LogOut className="h-5 w-5 flex-shrink-0" />
+          {!isCollapsed && (
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="ml-3 text-sm font-medium"
+            >
+              Logout
+            </motion.span>
+          )}
+        </button>
+
+        {/* User Info */}
+        {!isCollapsed && user && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="pt-4 border-t border-gray-200 dark:border-gray-700"
+          >
+            <div className="flex items-center">
+              <img
+                src={user.avatar}
+                alt={user.name}
+                className="w-8 h-8 rounded-full"
+              />
+              <div className="ml-3 min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                  {user.name}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {user.role}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </div>
+    </motion.div>
+  );
+};
