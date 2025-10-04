@@ -12,7 +12,7 @@ interface CrewCoordinationProps {
 }
 
 export const CrewCoordination: React.FC<CrewCoordinationProps> = ({ 
-  currentUser = 'Production Manager' 
+  currentUser = 'Producer' 
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [taskStats, setTaskStats] = useState({

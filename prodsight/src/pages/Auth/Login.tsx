@@ -39,8 +39,8 @@ export const Login: React.FC = () => {
 
   const demoAccounts = [
     { username: 'director', password: 'password123', role: 'Director', icon: Camera, color: 'from-purple-500 to-indigo-600' },
-    { username: 'producer', password: 'password123', role: 'Producer', icon: Users, color: 'from-blue-500 to-cyan-600' },
-    { username: 'prodmanager', password: 'password123', role: 'Production Manager', icon: Zap, color: 'from-green-500 to-emerald-600' },
+    { username: 'producer', password: 'password123', role: 'Production Manager', icon: Users, color: 'from-blue-500 to-cyan-600' },
+    { username: 'prodmanager', password: 'password123', role: 'Producer', icon: Zap, color: 'from-green-500 to-emerald-600' },
     { username: 'distmanager', password: 'password123', role: 'Distribution Manager', icon: Globe, color: 'from-orange-500 to-red-600' },
     { username: 'crew', password: 'password123', role: 'Crew Member', icon: Users, color: 'from-gray-500 to-slate-600' },
     { username: 'vfx', password: 'password123', role: 'VFX Artist', icon: Palette, color: 'from-pink-500 to-rose-600' },

@@ -5,10 +5,10 @@ import { useTasks } from '../../hooks/useTasks';
 import { useBudget } from '../../hooks/useBudget';
 import { useScript } from '../../hooks/useScript';
 import { ProducerDashboard } from './ProducerDashboard';
+import { ProductionManagerDashboard } from './ProductionManagerDashboard';
 import { DirectorDashboard } from './DirectorDashboard';
 import { CrewDashboard } from './CrewDashboard';
 import { VFXDashboard } from './VFXDashboard';
-import { ProductionManagerDashboard } from './ProductionManagerDashboard';
 import { DistributionManagerDashboard } from './DistributionManagerDashboard';
 
 export const Dashboard: React.FC = () => {

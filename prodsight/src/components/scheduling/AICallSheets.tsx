@@ -149,7 +149,7 @@ export const AICallSheets: React.FC = () => {
           shuttleSchedule: ['Every 30 minutes from base camp']
         },
         emergencyContacts: [
-          { name: 'Production Manager', role: 'Production', phone: '+91-98765-43210' },
+          { name: 'Producer', role: 'Production', phone: '+91-98765-43210' },
           { name: 'First Aid', role: 'Medical', phone: '+91-98765-43211' }
         ],
         notes: [

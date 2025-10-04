@@ -46,7 +46,7 @@ export const TaskAssignment: React.FC<TaskAssignmentProps> = ({ onTaskUpdate }) 
     dueDate: '',
     estimatedHours: 1,
     tags: [],
-    createdBy: 'Production Manager',
+    createdBy: 'Producer',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     comments: 0
@@ -67,7 +67,7 @@ export const TaskAssignment: React.FC<TaskAssignmentProps> = ({ onTaskUpdate }) 
         estimatedHours: 3,
         actualHours: 2,
         tags: ['equipment', 'camera'],
-        createdBy: 'Production Manager',
+        createdBy: 'Producer',
         createdAt: '2024-01-15T09:00:00Z',
         updatedAt: '2024-01-18T14:30:00Z',
         comments: 2
@@ -83,7 +83,7 @@ export const TaskAssignment: React.FC<TaskAssignmentProps> = ({ onTaskUpdate }) 
         dueDate: '2024-01-25',
         estimatedHours: 8,
         tags: ['3d-modeling', 'assets'],
-        createdBy: 'Production Manager',
+        createdBy: 'Producer',
         createdAt: '2024-01-16T10:00:00Z',
         updatedAt: '2024-01-16T10:00:00Z',
         comments: 0
@@ -100,7 +100,7 @@ export const TaskAssignment: React.FC<TaskAssignmentProps> = ({ onTaskUpdate }) 
         estimatedHours: 2,
         actualHours: 1.5,
         tags: ['equipment', 'sound'],
-        createdBy: 'Production Manager',
+        createdBy: 'Producer',
         createdAt: '2024-01-14T08:00:00Z',
         updatedAt: '2024-01-18T16:00:00Z',
         comments: 1
@@ -117,7 +117,7 @@ export const TaskAssignment: React.FC<TaskAssignmentProps> = ({ onTaskUpdate }) 
         estimatedHours: 4,
         actualHours: 4,
         tags: ['location', 'report'],
-        createdBy: 'Production Manager',
+        createdBy: 'Producer',
         createdAt: '2024-01-17T11:00:00Z',
         updatedAt: '2024-01-19T15:00:00Z',
         comments: 3
@@ -133,7 +133,7 @@ export const TaskAssignment: React.FC<TaskAssignmentProps> = ({ onTaskUpdate }) 
         dueDate: '2024-01-21',
         estimatedHours: 6,
         tags: ['costume', 'scheduling'],
-        createdBy: 'Production Manager',
+        createdBy: 'Producer',
         createdAt: '2024-01-18T13:00:00Z',
         updatedAt: '2024-01-18T13:00:00Z',
         comments: 0
@@ -185,7 +185,7 @@ export const TaskAssignment: React.FC<TaskAssignmentProps> = ({ onTaskUpdate }) 
         dueDate: '',
         estimatedHours: 1,
         tags: [],
-        createdBy: 'Production Manager',
+        createdBy: 'Producer',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         comments: 0

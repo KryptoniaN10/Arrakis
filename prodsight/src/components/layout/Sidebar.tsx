@@ -12,6 +12,15 @@ import {
   Settings,
   LogOut,
   ArrowLeft,
+  Calendar,
+  ClipboardList,
+  ShoppingCart,
+  Users,
+  MapPin,
+  Clock,
+  TrendingUp,
+  FileSpreadsheet,
+  Package,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -36,16 +45,46 @@ const navigationItems = [
     permissions: ['manage_tasks', 'view_assigned_tasks', 'view_vfx_tasks'],
   },
   {
-    name: 'Budget',
-    href: '/budget',
-    icon: DollarSign,
-    permissions: ['edit_budget', 'view_all'],
-  },
-  {
     name: 'Script',
     href: '/script',
     icon: FileText,
     permissions: ['manage_script', 'ai_breakdown'],
+  },
+  {
+    name: 'Scheduling',
+    href: '/scheduling',
+    icon: Calendar,
+    permissions: ['manage_production', 'view_all'],
+  },
+  {
+    name: 'Budget Management',
+    href: '/budget-management',
+    icon: DollarSign,
+    permissions: ['manage_budget', 'view_all'],
+  },
+  {
+    name: 'Call Sheets',
+    href: '/call-sheets',
+    icon: ClipboardList,
+    permissions: ['manage_production', 'view_all'],
+  },
+  {
+    name: 'Expense Tracking',
+    href: '/expense-tracking',
+    icon: TrendingUp,
+    permissions: ['manage_budget', 'view_all'],
+  },
+  {
+    name: 'Budget Reports',
+    href: '/budget-reports',
+    icon: FileSpreadsheet,
+    permissions: ['view_reports', 'manage_budget', 'view_all'],
+  },
+  {
+    name: 'Props Marketplace',
+    href: '/props-marketplace',
+    icon: ShoppingCart,
+    permissions: ['manage_props', 'view_all'],
   },
   {
     name: 'Assets',

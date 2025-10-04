@@ -1,20 +1,18 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
+  CheckSquare,
+  DollarSign,
+  FileText,
+  TrendingUp,
   Users,
   Calendar,
-  DollarSign,
-  AlertTriangle,
-  CheckSquare,
-  Clock,
-  Settings,
   Bell,
   Shield,
   Receipt,
-  FileText,
   BarChart3,
   Zap,
-  FolderOpen
+  FolderOpen,
 } from 'lucide-react';
 import { KPICard } from '../../components/dashboard/KPICard';
 import { ExpenseTracker } from '../../components/expense/ExpenseTracker';
@@ -30,7 +28,7 @@ import { AILocationVFXSuggestions } from '../../components/ai/AILocationVFXSugge
 import { GoogleCalendarIntegration } from '../../components/scheduling/GoogleCalendarIntegration';
 import { AICallSheets } from '../../components/scheduling/AICallSheets';
 import { AssetsManager } from '../../components/assets/AssetsManager';
-import { formatCurrency, getPriorityColor } from '../../utils/formatters';
+import { formatCurrency } from '../../utils/formatters';
 import { Task, Budget, Script, User } from '../../api/endpoints';
 
 interface ProductionManagerDashboardProps {
@@ -49,20 +47,22 @@ export const ProductionManagerDashboard: React.FC<ProductionManagerDashboardProp
   const [activeTab, setActiveTab] = useState('overview');
   const [notifications] = useState<string[]>(['New expense pending approval', 'Call sheet updated']);
 
-  // Calculations
-  const totalTasks = tasks.length;
+  // Calculations for overview
   const completedTasks = tasks.filter(task => task.status === 'done').length;
-  const overdueTasks = tasks.filter(task => 
+  const totalTasks = tasks.length;
+  const taskCompletionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
+  const budgetUtilization = budget ? (budget.spent / budget.total) * 100 : 0;
+  const isOverBudget = budget ? budget.spent > budget.total : false;
+
+  const vfxScenes = script?.vfxScenes || 0;
+  const totalScenes = script?.totalScenes || 0;
+
+  const overdueTasks = tasks.filter(task =>
     new Date(task.dueDate) < new Date() && task.status !== 'done'
   ).length;
-  const highPriorityTasks = tasks.filter(task => task.priority === 'high' && task.status !== 'done').length;
-  const budgetUtilization = budget ? (budget.spent / budget.total) * 100 : 0;
-  const activeTeamMembers = Array.from(new Set(tasks.map(task => task.assignee))).length;
 
-  const upcomingDeadlines = tasks
-    .filter(task => task.status !== 'done')
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-    .slice(0, 5);
+  const activeTeamMembers = Array.from(new Set(tasks.map(task => task.assignee))).length;
 
   // Tab navigation
   const tabs = [
@@ -104,7 +104,7 @@ export const ProductionManagerDashboard: React.FC<ProductionManagerDashboardProp
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Production Manager Dashboard
+            Producer Dashboard
           </h1>
           <p className="text-gray-600 dark:text-gray-400">Welcome back, {user.name}</p>
         </div>
@@ -179,44 +179,47 @@ export const ProductionManagerDashboard: React.FC<ProductionManagerDashboardProp
             exit={{ opacity: 0, x: 20 }}
             className="space-y-6"
           >
-            {/* Enhanced KPI Cards */}
+            {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <KPICard
-                title="Total Tasks"
-                value={totalTasks}
-                subtitle={`${completedTasks} completed`}
+                title="Task Completion"
+                value={`${completedTasks}/${totalTasks}`}
+                subtitle={`${Math.round(taskCompletionRate)}% complete`}
                 icon={CheckSquare}
-                color="blue"
+                color="green"
                 trend={{ value: 12, isPositive: true }}
               />
-              
-              <KPICard
-                title="Team Members"
-                value={activeTeamMembers}
-                subtitle="Active crew"
-                icon={Users}
-                color="green"
-              />
-              
+
               <KPICard
                 title="Budget Status"
-                value={`${Math.round(budgetUtilization)}%`}
-                subtitle="Utilized"
+                value={budget ? formatCurrency(budget.remaining) : '$0'}
+                subtitle={`${Math.round(budgetUtilization)}% utilized`}
                 icon={DollarSign}
-                color={budgetUtilization > 90 ? 'red' : budgetUtilization > 75 ? 'yellow' : 'green'}
+                color={isOverBudget ? 'red' : budgetUtilization > 80 ? 'yellow' : 'green'}
+                trend={{ value: -5, isPositive: false }}
               />
-              
+
               <KPICard
-                title="Urgent Tasks"
-                value={highPriorityTasks + overdueTasks}
-                subtitle={`${overdueTasks} overdue`}
-                icon={AlertTriangle}
-                color={overdueTasks > 0 ? 'red' : 'yellow'}
+                title="Script Progress"
+                value={`${totalScenes} scenes`}
+                subtitle={`${vfxScenes} VFX scenes`}
+                icon={FileText}
+                color="blue"
+              />
+
+              <KPICard
+                title="Overall Progress"
+                value={`${Math.round((taskCompletionRate + (100 - budgetUtilization)) / 2)}%`}
+                subtitle="Project completion"
+                icon={TrendingUp}
+                color="purple"
+                trend={{ value: 8, isPositive: true }}
               />
             </div>
 
-            {/* Task Management Overview */}
+            {/* Charts and Details */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Budget Breakdown */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -224,51 +227,44 @@ export const ProductionManagerDashboard: React.FC<ProductionManagerDashboardProp
                 className="card p-6"
               >
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                  Upcoming Deadlines
+                  Budget Breakdown
                 </h3>
-                <div className="space-y-3">
-                  {upcomingDeadlines.map((task) => {
-                    const isOverdue = new Date(task.dueDate) < new Date();
-                    const daysUntilDue = Math.ceil((new Date(task.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-                    
-                    return (
-                      <div key={task.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900 dark:text-gray-100">
-                              {task.title}
-                            </h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              Assigned to {task.assignee}
-                            </p>
+                {budget && (
+                  <div className="space-y-4">
+                    {budget.categories.map((category, index) => {
+                      const utilization = category.budgeted > 0 ? (category.spent / category.budgeted) * 100 : 0;
+                      return (
+                        <div key={category.name} className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="font-medium text-gray-700 dark:text-gray-300">
+                              {category.name}
+                            </span>
+                            <span className="text-gray-500 dark:text-gray-400">
+                              {formatCurrency(category.spent)} / {formatCurrency(category.budgeted)}
+                            </span>
                           </div>
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(task.priority)}`}>
-                            {task.priority}
-                          </span>
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${Math.min(utilization, 100)}%` }}
+                              transition={{ delay: 0.3 + index * 0.1, duration: 0.8 }}
+                              className={`h-2 rounded-full ${
+                                utilization > 100
+                                  ? 'bg-red-500'
+                                  : utilization > 80
+                                  ? 'bg-yellow-500'
+                                  : 'bg-green-500'
+                              }`}
+                            />
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className={`flex items-center ${
-                            isOverdue ? 'text-red-600 dark:text-red-400' : 
-                            daysUntilDue <= 2 ? 'text-yellow-600 dark:text-yellow-400' : 
-                            'text-gray-500 dark:text-gray-400'
-                          }`}>
-                            <Calendar className="h-3 w-3 mr-1" />
-                            {isOverdue ? `Overdue by ${Math.abs(daysUntilDue)} days` : 
-                             daysUntilDue === 0 ? 'Due today' :
-                             daysUntilDue === 1 ? 'Due tomorrow' :
-                             `Due in ${daysUntilDue} days`}
-                          </span>
-                          <span className="text-gray-500 dark:text-gray-400">
-                            {task.category}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </motion.div>
 
-              {/* Team Workload */}
+              {/* Recent Tasks */}
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -276,45 +272,37 @@ export const ProductionManagerDashboard: React.FC<ProductionManagerDashboardProp
                 className="card p-6"
               >
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                  Team Workload
+                  Recent Tasks
                 </h3>
-                <div className="space-y-4">
-                  {Array.from(new Set(tasks.map(task => task.assignee))).slice(0, 6).map((assignee) => {
-                    const assigneeTasks = tasks.filter(task => task.assignee === assignee);
-                    const completedByAssignee = assigneeTasks.filter(task => task.status === 'done').length;
-                    const activeByAssignee = assigneeTasks.filter(task => task.status !== 'done').length;
-                    const completionRate = assigneeTasks.length > 0 ? (completedByAssignee / assigneeTasks.length) * 100 : 0;
-
-                    return (
-                      <div key={assignee} className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="font-medium text-gray-700 dark:text-gray-300">
-                            {assignee}
-                          </span>
-                          <span className="text-gray-500 dark:text-gray-400">
-                            {activeByAssignee} active, {completedByAssignee} done
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${completionRate}%` }}
-                            transition={{ delay: 0.4, duration: 0.8 }}
-                            className={`h-2 rounded-full ${
-                              completionRate >= 80 ? 'bg-green-500' :
-                              completionRate >= 60 ? 'bg-yellow-500' :
-                              'bg-red-500'
-                            }`}
-                          />
-                        </div>
+                <div className="space-y-3">
+                  {tasks.slice(0, 5).map((task) => (
+                    <div key={task.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {task.title}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {task.assignee} • Due {new Date(task.dueDate).toLocaleDateString()}
+                        </p>
                       </div>
-                    );
-                  })}
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          task.status === 'done'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                            : task.status === 'in_progress'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {task.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </motion.div>
             </div>
 
-            {/* Budget and Resource Management */}
+            {/* Team Overview */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -322,95 +310,29 @@ export const ProductionManagerDashboard: React.FC<ProductionManagerDashboardProp
               className="card p-6"
             >
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                Resource Management
+                Team Overview
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Budget Overview */}
-                <div className="space-y-4">
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
-                    <DollarSign className="h-4 w-4 mr-2" />
-                    Budget Overview
-                  </h4>
-                  {budget && (
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm">
-                        <span>Total Budget</span>
-                        <span className="font-medium">{formatCurrency(budget.total)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Spent</span>
-                        <span className="font-medium text-red-600 dark:text-red-400">
-                          {formatCurrency(budget.spent)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Remaining</span>
-                        <span className="font-medium text-green-600 dark:text-green-400">
-                          {formatCurrency(budget.remaining)}
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                        <div
-                          className={`h-3 rounded-full ${
-                            budgetUtilization > 100 ? 'bg-red-500' :
-                            budgetUtilization > 80 ? 'bg-yellow-500' :
-                            'bg-green-500'
-                          }`}
-                          style={{ width: `${Math.min(budgetUtilization, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <Users className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    {tasks.filter(t => t.status === 'in_progress').length}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Active Tasks</p>
                 </div>
-
-                {/* Schedule Status */}
-                <div className="space-y-4">
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
-                    <Clock className="h-4 w-4 mr-2" />
-                    Schedule Status
-                  </h4>
-                  <div className="space-y-3">
-                    <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                        {tasks.filter(t => t.status === 'done').length}
-                      </p>
-                      <p className="text-xs text-green-600 dark:text-green-400">Completed</p>
-                    </div>
-                    <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                        {tasks.filter(t => t.status === 'in_progress').length}
-                      </p>
-                      <p className="text-xs text-blue-600 dark:text-blue-400">In Progress</p>
-                    </div>
-                    <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                      <p className="text-lg font-bold text-red-600 dark:text-red-400">
-                        {overdueTasks}
-                      </p>
-                      <p className="text-xs text-red-600 dark:text-red-400">Overdue</p>
-                    </div>
-                  </div>
+                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <Calendar className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    {tasks.filter(t => new Date(t.dueDate) < new Date()).length}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Overdue Tasks</p>
                 </div>
-
-                {/* Quick Actions */}
-                <div className="space-y-4">
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Quick Actions
-                  </h4>
-                  <div className="space-y-2">
-                    <button className="w-full p-2 text-left text-sm bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors">
-                      Assign New Task
-                    </button>
-                    <button className="w-full p-2 text-left text-sm bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors">
-                      Update Schedule
-                    </button>
-                    <button className="w-full p-2 text-left text-sm bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors">
-                      Review Budget
-                    </button>
-                    <button className="w-full p-2 text-left text-sm bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors">
-                      Generate Report
-                    </button>
-                  </div>
+                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <TrendingUp className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    {Math.round(taskCompletionRate)}%
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Completion Rate</p>
                 </div>
               </div>
             </motion.div>
@@ -516,9 +438,9 @@ export const ProductionManagerDashboard: React.FC<ProductionManagerDashboardProp
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                   Budget Requests & Ticketing
                 </h3>
-                <BudgetTicketingSystem 
-                  currentUser={user.name} 
-                  currentUserRole="Production Manager" 
+                <BudgetTicketingSystem
+                  currentUser={user.name}
+                  currentUserRole="Producer"
                 />
               </div>
               <div>
@@ -582,7 +504,7 @@ export const ProductionManagerDashboard: React.FC<ProductionManagerDashboardProp
             className="space-y-6"
           >
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibent text-gray-900 dark:text-gray-100 mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 Final Production Cost Reports
               </h3>
               <p className="text-gray-600 dark:text-gray-400">

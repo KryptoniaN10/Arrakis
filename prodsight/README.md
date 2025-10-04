@@ -5,8 +5,8 @@ ProdSight is a comprehensive film production management system that unifies pre-
 ## Features
 
 ### 🎬 Role-Based Dashboards
-- **Producer**: Full project oversight with budget, tasks, and progress tracking
-- **Production Manager**: Task assignment, budget management, and crew scheduling
+- **Producer**: Task assignment, budget management, and crew scheduling
+- **Production Manager**: Full project oversight with budget, tasks, and progress tracking
 - **Director**: Script management, AI breakdown, and scene approval
 - **Crew**: Personal task management and asset uploads
 - **VFX**: VFX pipeline management with version control

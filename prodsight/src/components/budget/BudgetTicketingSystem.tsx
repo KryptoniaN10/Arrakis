@@ -192,9 +192,9 @@ export const BudgetTicketingSystem: React.FC<BudgetTicketingSystemProps> = ({
     return request.status === filterStatus;
   });
 
-  const canCreateRequest = currentUserRole !== 'Producer';
-  const canReview = currentUserRole === 'Production Manager';
-  const canApprove = currentUserRole === 'Producer';
+  const canCreateRequest = currentUserRole !== 'Production Manager';
+  const canReview = currentUserRole === 'Producer';
+  const canApprove = currentUserRole === 'Production Manager';
 
   const handleCreateRequest = () => {
     if (newRequest.title && newRequest.amount > 0) {
@@ -518,7 +518,7 @@ export const BudgetTicketingSystem: React.FC<BudgetTicketingSystemProps> = ({
                       Approve
                     </button>
                     <button
-                      onClick={() => handleStatusUpdate(request.id, 'rejected', 'Rejected by producer')}
+                      onClick={() => handleStatusUpdate(request.id, 'rejected', 'Rejected by production manager')}
                       className="px-3 py-1 text-sm bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors"
                     >
                       Reject

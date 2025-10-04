@@ -5,7 +5,7 @@
     "role": "Producer",
     "email": "sarah@prodsight.com",
     "avatar": "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150",
-    "username": "producer",
+    "username": "prodmanager",
     "password": "password123",
     "permissions": ["view_all", "edit_budget", "manage_tasks", "view_reports", "manage_crew"]
   },
@@ -15,7 +15,7 @@
     "role": "Production Manager",
     "email": "michael@prodsight.com",
     "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
-    "username": "prodmanager",
+    "username": "producer",
     "password": "password123",
     "permissions": ["manage_tasks", "edit_budget", "manage_crew", "view_schedule"]
   },

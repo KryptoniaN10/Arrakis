@@ -6,27 +6,24 @@ import {
   Zap,
   Eye,
   Edit,
-  CheckCircle,
-  Clock,
-  Users,
-  MapPin,
   Save,
-  MessageCircle,
   Bot,
   Play,
   Pause,
   Search,
-  Filter,
   Trash2,
-  Plus,
-  Download,
+  MessageCircle,
+  Clock,
+  Users,
+  MapPin,
+  CheckCircle,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { RoleGuard } from '../../components/auth/RoleGuard';
 import { useScript } from '../../hooks/useScript';
 import { useAI } from '../../hooks/useAI';
-import { formatDate, getStatusColor } from '../../utils/formatters';
+import { getStatusColor } from '../../utils/formatters';
 
 interface ChatMessage {
   id: string;
@@ -379,138 +376,12 @@ export const Script: React.FC = () => {
                   </span>
                 ))}
               </div>
+              
             </motion.div>
           </div>
         )}
-
-        {/* Upload Script Modal */}
-        <Modal
-          isOpen={showUploadModal}
-          onClose={() => setShowUploadModal(false)}
-          title="Upload Script"
-          size="lg"
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Script Content
-              </label>
-              <textarea
-                value={scriptText}
-                onChange={(e) => setScriptText(e.target.value)}
-                rows={12}
-                className="input-field resize-none"
-                placeholder="Paste your script content here or upload a file..."
-              />
-            </div>
-            
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-              <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                Or drag and drop a script file
-              </p>
-              <Button variant="secondary" size="sm">
-                Choose File
-              </Button>
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <Button
-                variant="secondary"
-                onClick={() => setShowUploadModal(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleScriptUpload}
-                loading={aiLoading}
-                disabled={!scriptText.trim()}
-              >
-                <Zap className="h-4 w-4 mr-2" />
-                Analyze with AI
-              </Button>
-            </div>
           </div>
-        </Modal>
-
-        {/* AI Breakdown Results Modal */}
-        <Modal
-          isOpen={showBreakdownModal}
-          onClose={() => setShowBreakdownModal(false)}
-          title="AI Script Breakdown Results"
-          size="xl"
-        >
-          {breakdown && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-4 gap-4">
-                <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                    {breakdown.summary.totalScenes}
-                  </p>
-                  <p className="text-xs text-blue-600 dark:text-blue-400">Scenes</p>
-                </div>
-                <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                    {breakdown.summary.totalDuration}m
-                  </p>
-                  <p className="text-xs text-green-600 dark:text-green-400">Duration</p>
-                </div>
-                <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                  <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                    {breakdown.summary.vfxScenes}
-                  </p>
-                  <p className="text-xs text-purple-600 dark:text-purple-400">VFX Scenes</p>
-                </div>
-                <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                  <p className="text-lg font-bold text-red-600 dark:text-red-400">
-                    {breakdown.summary.locations.length}
-                  </p>
-                  <p className="text-xs text-red-600 dark:text-red-400">Locations</p>
-                </div>
-              </div>
-
-              <div className="max-h-96 overflow-y-auto">
-                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
-                  Detected Scenes
-                </h4>
-                <div className="space-y-3">
-                  {breakdown.scenes.map((scene: any, index: number) => (
-                    <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-gray-900 dark:text-gray-100">
-                            Scene {scene.number}
-                          </span>
-                          {scene.vfx && <Zap className="h-4 w-4 text-purple-500" />}
-                        </div>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {scene.estimatedDuration}min
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                        {scene.description}
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                        <span>{scene.location}</span>
-                        <span>{scene.timeOfDay}</span>
-                        <span>{scene.characters.length} characters</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <Button variant="secondary" onClick={() => setShowBreakdownModal(false)}>
-                  Close
-                </Button>
-                <Button>
-                  Save Breakdown
-                </Button>
-              </div>
-            </div>
-          )}
-        </Modal>
+        )}
 
         {/* Script Editor Tab */}
         {activeTab === 'editor' && (
@@ -763,8 +634,135 @@ export const Script: React.FC = () => {
             </div>
           </motion.div>
         )}
+
+        {/* Upload Script Modal */}
+        <Modal
+          isOpen={showUploadModal}
+          onClose={() => setShowUploadModal(false)}
+          title="Upload Script"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Script Content
+              </label>
+              <textarea
+                value={scriptText}
+                onChange={(e) => setScriptText(e.target.value)}
+                rows={12}
+                className="input-field resize-none"
+                placeholder="Paste your script content here or upload a file..."
+              />
+            </div>
+            
+            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+              <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                Or drag and drop a script file
+              </p>
+              <Button variant="secondary" size="sm">
+                Choose File
+              </Button>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                variant="secondary"
+                onClick={() => setShowUploadModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleScriptUpload}
+                loading={aiLoading}
+                disabled={!scriptText.trim()}
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Analyze with AI
+              </Button>
+            </div>
           </div>
-        )}
+        </Modal>
+
+        {/* AI Breakdown Results Modal */}
+        <Modal
+          isOpen={showBreakdownModal}
+          onClose={() => setShowBreakdownModal(false)}
+          title="AI Script Breakdown Results"
+          size="xl"
+        >
+          {breakdown && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-4 gap-4">
+                <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                    {breakdown.summary.totalScenes}
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">Scenes</p>
+                </div>
+                <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                    {breakdown.summary.totalDuration}m
+                  </p>
+                  <p className="text-xs text-green-600 dark:text-green-400">Duration</p>
+                </div>
+                <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                  <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                    {breakdown.summary.vfxScenes}
+                  </p>
+                  <p className="text-xs text-purple-600 dark:text-purple-400">VFX Scenes</p>
+                </div>
+                <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <p className="text-lg font-bold text-red-600 dark:text-red-400">
+                    {breakdown.summary.locations.length}
+                  </p>
+                  <p className="text-xs text-red-600 dark:text-red-400">Locations</p>
+                </div>
+              </div>
+
+              <div className="max-h-96 overflow-y-auto">
+                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
+                  Detected Scenes
+                </h4>
+                <div className="space-y-3">
+                  {breakdown.scenes.map((scene: any, index: number) => (
+                    <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-gray-900 dark:text-gray-100">
+                            Scene {scene.number}
+                          </span>
+                          {scene.vfx && <Zap className="h-4 w-4 text-purple-500" />}
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {scene.estimatedDuration}min
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        {scene.description}
+                      </p>
+                      <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                        <span>{scene.location}</span>
+                        <span>{scene.timeOfDay}</span>
+                        <span>{scene.characters.length} characters</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <Button variant="secondary" onClick={() => setShowBreakdownModal(false)}>
+                  Close
+                </Button>
+                <Button>
+                  Save Breakdown
+                </Button>
+              </div>
+            </div>
+          )}
+        </Modal>
 
         {/* AI Chatbot */}
         {isChatOpen && (
