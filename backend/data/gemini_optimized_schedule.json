@@ -1,0 +1,193 @@
+{
+  "optimized_schedule": {
+    "scheduling_strategy": "The strategy prioritizes location efficiency by grouping scenes at the same location. Within each location, scenes are ordered by time of day (DAY, DUSK, NIGHT) to maximize daylight shooting and minimize artificial lighting setups. Maya Chen's schedule is optimized to reduce her overall working days by clustering her scenes. Outdoor scenes are grouped, and potential weather dependencies are noted. Actor availability is considered by minimizing their presence on set across multiple days where possible.",
+    "total_shooting_days": 3,
+    "daily_schedules": [
+      {
+        "day": 1,
+        "scenes": [
+          {
+            "scene_number": 4,
+            "scene_name": "EXT. UNIVERSITY CAMPUS - DAY",
+            "location": "University Campus Quad",
+            "time_of_day": "DAY",
+            "actors": [
+              "Maya"
+            ],
+            "duration": "1 minutes"
+          },
+          {
+            "scene_number": 5,
+            "scene_name": "INT. PROFESSOR RHODES' OFFICE - DAY",
+            "location": "Professor Rhodes' Office",
+            "time_of_day": "DAY",
+            "actors": [
+              "Professor Rhodes",
+              "Maya"
+            ],
+            "duration": "1 minutes"
+          },
+          {
+            "scene_number": 3,
+            "scene_name": "INT. MAYA'S APARTMENT - LIVING ROOM - DAY",
+            "location": "Maya's Apartment - Living Room",
+            "time_of_day": "DAY",
+            "actors": [
+              "Maya",
+              "Alex"
+            ],
+            "duration": "1 minutes"
+          }
+        ],
+        "notes": "Focus on DAY scenes at various city/campus locations. Maya has a busy day but is consolidated."
+      },
+      {
+        "day": 2,
+        "scenes": [
+          {
+            "scene_number": 6,
+            "scene_name": "INT. GOVERNMENT FACILITY - BRIEFING ROOM - DAY",
+            "location": "Government Facility - Briefing Room",
+            "time_of_day": "DAY",
+            "actors": [
+              "Agent Torres"
+            ],
+            "extras": [
+              "Analysts"
+            ],
+            "duration": "1 minutes"
+          },
+          {
+            "scene_number": 7,
+            "scene_name": "EXT. DESERT HIGHWAY - DAY",
+            "location": "Desert Highway",
+            "time_of_day": "DAY",
+            "actors": [
+              "Maya"
+            ],
+            "duration": "1 minutes"
+          },
+          {
+            "scene_number": 8,
+            "scene_name": "INT. MAYA'S CAR - MOVING - DAY",
+            "location": "Maya's Car",
+            "time_of_day": "DAY",
+            "actors": [
+              "Maya",
+              "Rhodes"
+            ],
+            "duration": "1 minutes"
+          }
+        ],
+        "notes": "Government facility requires dedicated setup. Desert highway and car scenes are grouped for logistical efficiency and weather dependency."
+      },
+      {
+        "day": 3,
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_name": "EXT. ABANDONED RADIO STATION - NIGHT",
+            "location": "Abandoned Radio Station",
+            "time_of_day": "NIGHT",
+            "actors": [],
+            "duration": "1 minutes"
+          },
+          {
+            "scene_number": 9,
+            "scene_name": "EXT. RADIO STATION - PARKING AREA - DUSK",
+            "location": "Radio Station Parking Area",
+            "time_of_day": "DUSK",
+            "actors": [
+              "Maya"
+            ],
+            "duration": "1 minutes"
+          },
+          {
+            "scene_number": 2,
+            "scene_name": "INT. RADIO STATION - CONTROL ROOM - NIGHT",
+            "location": "Radio Station Control Room",
+            "time_of_day": "NIGHT",
+            "actors": [
+              "Maya Chen"
+            ],
+            "duration": "1 minutes"
+          }
+        ],
+        "notes": "All Radio Station related scenes are grouped. DUSK scene is scheduled before NIGHT scenes at the same location. Maya Chen's final scenes."
+      }
+    ],
+    "actor_schedules": {
+      "Maya Chen": [
+        "Day 1",
+        "Day 3"
+      ],
+      "Maya": [
+        "Day 1",
+        "Day 2",
+        "Day 3"
+      ],
+      "Alex": [
+        "Day 1"
+      ],
+      "Professor Rhodes": [
+        "Day 1"
+      ],
+      "Agent Torres": [
+        "Day 2"
+      ],
+      "Rhodes": [
+        "Day 2"
+      ]
+    },
+    "location_schedule": {
+      "University Campus Quad": [
+        "Day 1"
+      ],
+      "Professor Rhodes' Office": [
+        "Day 1"
+      ],
+      "Maya's Apartment - Living Room": [
+        "Day 1"
+      ],
+      "Government Facility - Briefing Room": [
+        "Day 2"
+      ],
+      "Desert Highway": [
+        "Day 2"
+      ],
+      "Maya's Car": [
+        "Day 2"
+      ],
+      "Abandoned Radio Station": [
+        "Day 3"
+      ],
+      "Radio Station Parking Area": [
+        "Day 3"
+      ],
+      "Radio Station Control Room": [
+        "Day 3"
+      ]
+    },
+    "optimization_benefits": [
+      "Minimized travel time and costs by grouping scenes by location.",
+      "Reduced setup and teardown time for equipment and crew at each location.",
+      "Optimized Maya Chen's schedule to a minimal number of working days (3 days).",
+      "Efficient use of daylight by scheduling DAY scenes first, then DUSK, then NIGHT within locations.",
+      "Potential for equipment sharing between Radio Station scenes.",
+      "Clear separation of complex/sensitive locations (Government Facility) from more straightforward ones."
+    ],
+    "potential_risks": [
+      "Weather dependency for EXT. DESERT HIGHWAY - DAY (Scene 7). A backup indoor location or flexible rescheduling might be needed.",
+      "Night shoots (Scenes 1 & 2) can be more challenging and may require additional lighting equipment and crew.",
+      "Government Facility scenes (Scene 6) may have strict access and security protocols that could impact scheduling flexibility.",
+      "The duration of each scene is very short (1 minute). This schedule assumes efficient transitions between scenes within a day and at a location. Any delays could impact the overall schedule.",
+      "Actor availability for Rhodes (Scene 8) and Agent Torres (Scene 6) is limited to one day each, requiring strict adherence to the schedule for those actors."
+    ]
+  },
+  "generation_info": {
+    "generated_at": "2025-10-05T16:12:47.267563",
+    "input_scenes": 9,
+    "ai_model": "gemini-pro (via google-generativeai SDK)",
+    "prompt_length": 3414
+  }
+}

@@ -40,6 +40,7 @@ def create_app(config_name='default'):
     from routes.vfx import vfx_bp
     from routes.assets import assets_bp
     from routes.analysis import analysis_bp
+    from routes.ai_routes import ai_bp
     
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -50,6 +51,7 @@ def create_app(config_name='default'):
     app.register_blueprint(vfx_bp, url_prefix='/api/vfx')
     app.register_blueprint(assets_bp, url_prefix='/api/assets')
     app.register_blueprint(analysis_bp, url_prefix='/api/analysis')
+    app.register_blueprint(ai_bp, url_prefix='/api/ai')
     
     # Error handlers
     @app.errorhandler(404)
@@ -74,3 +76,4 @@ def create_app(config_name='default'):
 if __name__ == '__main__':
     app = create_app()
     app.run(debug=True, host='0.0.0.0', port=5000)
+

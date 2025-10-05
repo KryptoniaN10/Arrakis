@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Calendar,
   MapPin,
   Clock,
   Users,
@@ -11,7 +10,6 @@ import {
   ChevronRight,
   Plus,
   Edit,
-  Trash2,
   Download,
   AlertTriangle,
   CheckCircle,
@@ -20,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { type ScheduleConstraints, type OptimizedSchedule } from '../../api/endpoints';
 
 interface Scene {
   id: string;
@@ -56,7 +55,7 @@ interface LocationCluster {
 
 export const Scheduling: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [, setSelectedDate] = useState<Date | null>(null);
   const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>([]);
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [locationClusters, setLocationClusters] = useState<LocationCluster[]>([]);
@@ -64,137 +63,139 @@ export const Scheduling: React.FC = () => {
   const [showAIScheduleModal, setShowAIScheduleModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<ScheduleEvent | null>(null);
   const [isGeneratingSchedule, setIsGeneratingSchedule] = useState(false);
+  const [optimizedSchedule, setOptimizedSchedule] = useState<OptimizedSchedule | null>(null);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
 
-  // Initialize demo data
   useEffect(() => {
-    const demoScenes: Scene[] = [
-      {
-        id: '1',
-        number: 1,
-        title: 'Opening Street Scene',
-        description: 'A bustling street scene with vendors and pedestrians.',
-        location: 'Mumbai Street',
-        estimatedDuration: 5,
-        characters: ['Rahul', 'Extras'],
-        props: ['Street stalls', 'Vehicles'],
-        vfx: false,
-        status: 'scheduled'
-      },
-      {
-        id: '2',
-        number: 2,
-        title: 'Coffee Shop Interior',
-        description: 'Rahul and Priya discuss the AI project over coffee.',
-        location: 'Coffee Shop - Kochi',
-        estimatedDuration: 8,
-        characters: ['Rahul', 'Priya'],
-        props: ['Coffee cups', 'Laptop'],
-        vfx: false,
-        status: 'scheduled'
-      },
-      {
-        id: '3',
-        number: 3,
-        title: 'AI Visualization',
-        description: 'Digital representation of AI processing data.',
-        location: 'Studio - Mumbai',
-        estimatedDuration: 12,
-        characters: [],
-        props: ['Green screen', 'Computers'],
-        vfx: true,
-        status: 'scheduled'
-      },
-      {
-        id: '4',
-        number: 4,
-        title: 'Beach Conversation',
-        description: 'Emotional conversation between leads at sunset.',
-        location: 'Beach - Kochi',
-        estimatedDuration: 6,
-        characters: ['Rahul', 'Priya'],
-        props: ['Beach chairs'],
-        vfx: false,
-        status: 'scheduled'
-      },
-      {
-        id: '5',
-        number: 5,
-        title: 'Office Meeting',
-        description: 'Team meeting about the project launch.',
-        location: 'Office - Mumbai',
-        estimatedDuration: 4,
-        characters: ['Rahul', 'Team Members'],
-        props: ['Conference table', 'Projector'],
-        vfx: false,
-        status: 'scheduled'
-      }
-    ];
-
-    setScenes(demoScenes);
-    generateLocationClusters(demoScenes);
+    setScenes([]);
+    setLocationClusters([]);
   }, []);
 
-  const generateLocationClusters = (sceneList: Scene[]) => {
-    const clusters: { [key: string]: Scene[] } = {};
-    
-    sceneList.forEach(scene => {
-      const location = scene.location;
-      if (!clusters[location]) {
-        clusters[location] = [];
-      }
-      clusters[location].push(scene);
-    });
-
-    const locationClusters: LocationCluster[] = Object.entries(clusters).map(([location, scenes]) => ({
-      location,
-      scenes,
-      estimatedDays: Math.ceil(scenes.reduce((total, scene) => total + scene.estimatedDuration, 0) / 8), // 8 hours per day
-      priority: scenes.length // More scenes = higher priority
-    }));
-
-    // Sort by priority (number of scenes) descending
-    locationClusters.sort((a, b) => b.priority - a.priority);
-    setLocationClusters(locationClusters);
-  };
 
   const generateAISchedule = async () => {
     setIsGeneratingSchedule(true);
+    setScheduleError(null);
     
-    // Simulate AI processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      // Create schedule constraints based on current data
+      const constraints: ScheduleConstraints = {
+        actor_constraints: {
+          // Example constraints - could be made configurable
+          'Maya': {
+            max_consecutive_days: 3,
+            preferred_call_times: ['09:00', '10:00']
+          },
+          'Rahul': {
+            available_days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+          }
+        },
+        location_preferences: {
+          'Radio Station': {
+            setup_time_hours: 2,
+            weather_dependent: false
+          },
+          'Beach - Kochi': {
+            weather_dependent: true,
+            setup_time_hours: 1
+          }
+        }
+      };
 
-    const events: ScheduleEvent[] = [];
-    let currentScheduleDate = new Date();
-    currentScheduleDate.setDate(currentScheduleDate.getDate() + 1); // Start tomorrow
-
-    locationClusters.forEach((cluster, clusterIndex) => {
-      const scenesPerDay = Math.ceil(8 / (cluster.scenes.reduce((avg, scene) => avg + scene.estimatedDuration, 0) / cluster.scenes.length));
+      // Call the Gemini AI scheduling API directly for debugging
+      console.log('🚀 Calling Gemini API with constraints:', constraints);
       
-      for (let i = 0; i < cluster.scenes.length; i += scenesPerDay) {
-        const dayScenes = cluster.scenes.slice(i, i + scenesPerDay);
-        const totalDuration = dayScenes.reduce((total, scene) => total + scene.estimatedDuration, 0);
-        
-        const event: ScheduleEvent = {
-          id: `event-${clusterIndex}-${Math.floor(i / scenesPerDay)}`,
-          date: new Date(currentScheduleDate),
-          startTime: '09:00',
-          endTime: `${9 + Math.ceil(totalDuration)}:00`,
-          location: cluster.location,
-          scenes: dayScenes,
-          cast: [...new Set(dayScenes.flatMap(scene => scene.characters))],
-          crew: ['Director', 'DOP', 'Sound Engineer', 'Assistant Director'],
-          status: 'scheduled',
-          notes: `Shooting ${dayScenes.length} scene(s) at ${cluster.location}`
-        };
-
-        events.push(event);
-        currentScheduleDate.setDate(currentScheduleDate.getDate() + 1);
+      const response = await fetch('http://localhost:5000/api/ai/generate_gemini_schedule', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(constraints)
+      });
+      
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-    });
+      
+      const responseData = await response.json();
+      console.log('📊 Full API Response:', responseData);
+      
+      // Check if response has the expected structure
+      if (!responseData || typeof responseData !== 'object') {
+        throw new Error('Invalid response format from server');
+      }
+      
+      if (responseData.status === 'success' || responseData.status === 'warning') {
+        const scheduleData = responseData.schedule_data;
+        
+        if (scheduleData && scheduleData.daily_schedules) {
+          setOptimizedSchedule(scheduleData);
+          
+          // Convert the optimized schedule to calendar events
+          const events: ScheduleEvent[] = [];
+          let currentScheduleDate = new Date();
+          currentScheduleDate.setDate(currentScheduleDate.getDate() + 1); // Start tomorrow
 
-    setScheduleEvents(events);
-    setIsGeneratingSchedule(false);
-    setShowAIScheduleModal(false);
+          scheduleData.daily_schedules.forEach((daySchedule: any, dayIndex: number) => {
+            const dayScenes = (daySchedule.scenes || []).map((scene: any) => ({
+              id: (scene.scene_number || dayIndex).toString(),
+              number: scene.scene_number || dayIndex,
+              title: scene.scene_name || scene.scene_title || `Scene ${scene.scene_number || dayIndex}`,
+              description: `${scene.location || 'Unknown Location'} - ${scene.time_of_day || 'Unknown Time'}`,
+              location: scene.location || 'Unknown Location',
+              estimatedDuration: Math.ceil((scene.duration || scene.estimated_duration_minutes || 60) / 60), // Convert to hours
+              characters: scene.actors || scene.actors_needed || [],
+              props: [],
+              vfx: false,
+              status: 'scheduled' as const
+            }));
+
+            const event: ScheduleEvent = {
+              id: `ai-event-${dayIndex}`,
+              date: new Date(currentScheduleDate),
+              startTime: (daySchedule.scenes && daySchedule.scenes[0]?.call_time) || '09:00',
+              endTime: (daySchedule.scenes && daySchedule.scenes[daySchedule.scenes.length - 1]?.estimated_wrap) || '18:00',
+              location: daySchedule.location_focus || 'Unknown Location',
+              scenes: dayScenes,
+              cast: daySchedule.daily_summary?.primary_actors || [],
+              crew: ['Director', 'DOP', 'Sound Engineer', 'Assistant Director'],
+              status: 'scheduled',
+              notes: `AI-optimized schedule: ${(daySchedule.scenes || []).length} scenes, ${daySchedule.daily_summary?.total_duration_minutes || 'Unknown'} minutes total`
+            };
+
+            events.push(event);
+            currentScheduleDate.setDate(currentScheduleDate.getDate() + 1);
+          });
+
+          setScheduleEvents(events);
+          
+          // Show success message
+          if (responseData.status === 'warning') {
+            setScheduleError(`Schedule generated with fallback: ${responseData.message}`);
+          }
+        } else {
+          // API succeeded but no valid schedule data
+          setScheduleError('Schedule generated but data format is invalid. Using fallback.');
+          console.warn('Schedule data missing or invalid:', scheduleData);
+          
+          // Use fallback scheduling
+          throw new Error('Invalid schedule data structure');
+        }
+      } else {
+        setScheduleError(responseData.message || 'Failed to generate schedule');
+      }
+    } catch (error: any) {
+      console.error('Schedule generation error:', error);
+      setScheduleError(error.message || 'Network error: Unable to connect to scheduling service');
+      
+      // No fallback - show error message to user
+      console.log('No fallback schedule available - user should see error message');
+    } finally {
+      setIsGeneratingSchedule(false);
+      setShowAIScheduleModal(false);
+    }
   };
 
   const getDaysInMonth = (date: Date) => {
@@ -302,6 +303,14 @@ export const Scheduling: React.FC = () => {
           <p className="text-gray-600 dark:text-gray-400">
             Intelligent shoot scheduling with location clustering
           </p>
+          {scheduleError && (
+            <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <div className="flex items-center">
+                <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mr-2" />
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">{scheduleError}</p>
+              </div>
+            </div>
+          )}
         </div>
         <div className="flex gap-3">
           <Button
@@ -318,6 +327,55 @@ export const Scheduling: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* AI Schedule Summary */}
+      {optimizedSchedule && (
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+              <Bot className="h-5 w-5 mr-2 text-blue-500" />
+              AI-Optimized Schedule
+            </h2>
+            <span className="px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 rounded-full text-sm font-medium">
+              {optimizedSchedule.total_shooting_days} Days
+            </span>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">{optimizedSchedule.scheduling_strategy}</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {optimizedSchedule.daily_schedules.length}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Shooting Days</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                {Object.keys(optimizedSchedule.actor_schedules).length}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Actors Scheduled</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {Object.keys(optimizedSchedule.location_schedule).length}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Locations</div>
+            </div>
+          </div>
+          {optimizedSchedule.optimization_benefits.length > 0 && (
+            <div className="mt-4">
+              <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Key Benefits:</h4>
+              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                {optimizedSchedule.optimization_benefits.slice(0, 3).map((benefit, index) => (
+                  <li key={index} className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                    {benefit}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Location Clusters Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
