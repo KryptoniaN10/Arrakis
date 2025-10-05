@@ -65,6 +65,8 @@ export const Scheduling: React.FC = () => {
   const [isGeneratingSchedule, setIsGeneratingSchedule] = useState(false);
   const [optimizedSchedule, setOptimizedSchedule] = useState<OptimizedSchedule | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editableEvent, setEditableEvent] = useState<ScheduleEvent | null>(null);
 
   useEffect(() => {
     setScenes([]);
@@ -208,15 +210,15 @@ export const Scheduling: React.FC = () => {
 
   const getEventsForDate = (date: Date) => {
     return scheduleEvents.filter(event => 
-      event.date.toDateString() === date.toDateString()
+      new Date(event.date).toDateString() === date.toDateString()
     );
   };
 
   // Returns a stable Day N label based on chronological order of scheduled dates
-  const getShootDayLabel = (date: Date) => {
-    const uniqueDates = Array.from(new Set(scheduleEvents.map(e => e.date.toDateString())));
+  const getShootDayLabel = (date: any) => {
+    const uniqueDates = Array.from(new Set(scheduleEvents.map(e => new Date(e.date).toDateString())));
     uniqueDates.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-    const index = uniqueDates.indexOf(date.toDateString());
+    const index = uniqueDates.indexOf(new Date(date).toDateString());
     return index >= 0 ? `Day ${index + 1}` : '';
   };
 
@@ -237,6 +239,8 @@ export const Scheduling: React.FC = () => {
     if (events.length > 0) {
       setSelectedEvent(events[0]);
       setShowEventModal(true);
+      setIsEditing(false);
+      setEditableEvent(null);
     }
   };
 
@@ -283,7 +287,7 @@ export const Scheduling: React.FC = () => {
                       : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
                   }`}
                 >
-                  {getShootDayLabel(event.date) || event.location}
+                  {getShootDayLabel(new Date(event.date)) || event.location}
                 </div>
               ))}
               {events.length > 2 && (
@@ -558,85 +562,301 @@ export const Scheduling: React.FC = () => {
       >
         {selectedEvent && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Date & Time</h4>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {selectedEvent.date.toLocaleDateString()} | {selectedEvent.startTime} - {selectedEvent.endTime}
-                </p>
-              </div>
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Location</h4>
-                <p className="text-gray-600 dark:text-gray-400 flex items-center">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  {selectedEvent.location}
-                </p>
-              </div>
-            </div>
+            {/* Read-only details or Edit form */}
+            {!isEditing && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Date & Time</h4>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {new Date(selectedEvent.date).toLocaleDateString()} | {selectedEvent.startTime} - {selectedEvent.endTime}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Location</h4>
+                    <p className="text-gray-600 dark:text-gray-400 flex items-center">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      {selectedEvent.location}
+                    </p>
+                  </div>
+                </div>
 
-            <div>
-              <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Scenes to Shoot</h4>
-              <div className="space-y-2">
-                {selectedEvent.scenes.map(scene => (
-                  <div key={scene.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <div>
-                      <span className="font-medium text-gray-900 dark:text-gray-100">
-                        Scene {scene.number}: {scene.title}
-                      </span>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{scene.description}</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        {scene.estimatedDuration}h
-                      </span>
-                      {scene.vfx && <Zap className="h-4 w-4 text-purple-500" />}
+                <div>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Scenes to Shoot</h4>
+                  <div className="space-y-2">
+                    {selectedEvent.scenes.map(scene => (
+                      <div key={scene.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">
+                            Scene {scene.number}: {scene.title}
+                          </span>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{scene.description}</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            {scene.estimatedDuration}h
+                          </span>
+                          {scene.vfx && <Zap className="h-4 w-4 text-purple-500" />}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Cast Required</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedEvent.cast.map(actor => (
+                        <span key={actor} className="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 rounded-full text-sm">
+                          {actor}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Cast Required</h4>
-                <div className="flex flex-wrap gap-2">
-                  {selectedEvent.cast.map(actor => (
-                    <span key={actor} className="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 rounded-full text-sm">
-                      {actor}
-                    </span>
-                  ))}
+                  <div>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Crew Required</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedEvent.crew.map(member => (
+                        <span key={member} className="px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 rounded-full text-sm">
+                          {member}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Crew Required</h4>
-                <div className="flex flex-wrap gap-2">
-                  {selectedEvent.crew.map(member => (
-                    <span key={member} className="px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 rounded-full text-sm">
-                      {member}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
 
-            {selectedEvent.notes && (
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Notes</h4>
-                <p className="text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                  {selectedEvent.notes}
-                </p>
+                {selectedEvent.notes && (
+                  <div>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Notes</h4>
+                    <p className="text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                      {selectedEvent.notes}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {isEditing && editableEvent && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                    <input
+                      type="date"
+                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
+                      value={new Date(editableEvent.date).toISOString().split('T')[0]}
+                      onChange={(e) => setEditableEvent({ ...editableEvent, date: new Date(e.target.value) })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Time</label>
+                      <input
+                        type="time"
+                        className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
+                        value={editableEvent.startTime}
+                        onChange={(e) => setEditableEvent({ ...editableEvent, startTime: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Time</label>
+                      <input
+                        type="time"
+                        className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
+                        value={editableEvent.endTime}
+                        onChange={(e) => setEditableEvent({ ...editableEvent, endTime: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
+                    <input
+                      type="text"
+                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
+                      value={editableEvent.location}
+                      onChange={(e) => setEditableEvent({ ...editableEvent, location: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                    <select
+                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
+                      value={editableEvent.status}
+                      onChange={(e) => setEditableEvent({ ...editableEvent, status: e.target.value as ScheduleEvent['status'] })}
+                    >
+                      <option value="scheduled">scheduled</option>
+                      <option value="in_progress">in_progress</option>
+                      <option value="completed">completed</option>
+                      <option value="cancelled">cancelled</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+                  <textarea
+                    className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
+                    rows={3}
+                    value={editableEvent.notes || ''}
+                    onChange={(e) => setEditableEvent({ ...editableEvent, notes: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cast (comma separated)</label>
+                    <input
+                      type="text"
+                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
+                      value={editableEvent.cast.join(', ')}
+                      onChange={(e) => setEditableEvent({ ...editableEvent, cast: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Crew (comma separated)</label>
+                    <input
+                      type="text"
+                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
+                      value={editableEvent.crew.join(', ')}
+                      onChange={(e) => setEditableEvent({ ...editableEvent, crew: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Scenes</h4>
+                  <div className="space-y-2">
+                    {editableEvent.scenes.map((scene, idx) => (
+                      <div key={scene.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-2">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
+                            <input
+                              type="text"
+                              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
+                              value={scene.title}
+                              onChange={(e) => {
+                                const scenes = [...editableEvent.scenes];
+                                scenes[idx] = { ...scenes[idx], title: e.target.value };
+                                setEditableEvent({ ...editableEvent, scenes });
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
+                            <input
+                              type="text"
+                              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
+                              value={scene.location}
+                              onChange={(e) => {
+                                const scenes = [...editableEvent.scenes];
+                                scenes[idx] = { ...scenes[idx], location: e.target.value };
+                                setEditableEvent({ ...editableEvent, scenes });
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estimated Duration (h)</label>
+                            <input
+                              type="number"
+                              min={0}
+                              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
+                              value={scene.estimatedDuration}
+                              onChange={(e) => {
+                                const scenes = [...editableEvent.scenes];
+                                const val = Number(e.target.value);
+                                scenes[idx] = { ...scenes[idx], estimatedDuration: isNaN(val) ? scenes[idx].estimatedDuration : val };
+                                setEditableEvent({ ...editableEvent, scenes });
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
             <div className="flex justify-end space-x-3">
-              <Button variant="secondary">
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Schedule
-              </Button>
-              <Button>
-                <Download className="h-4 w-4 mr-2" />
-                Generate Call Sheet
-              </Button>
+              {!isEditing && (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setEditableEvent(JSON.parse(JSON.stringify(selectedEvent)) as ScheduleEvent);
+                    setIsEditing(true);
+                  }}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Schedule
+                </Button>
+              )}
+              {isEditing && editableEvent && (
+                <>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setEditableEvent(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      // Persist changes locally
+                      const updated = editableEvent;
+                      setScheduleEvents(prev => prev.map(ev => ev.id === updated.id ? updated : ev));
+                      setSelectedEvent(updated);
+                      setIsEditing(false);
+                      setEditableEvent(null);
+                    }}
+                  >
+                    Save Changes
+                  </Button>
+                </>
+              )}
+              {!isEditing && (
+                <Button
+                  onClick={async () => {
+                    if (!selectedEvent) return;
+                    try {
+                      const payload = {
+                        ...selectedEvent,
+                        date: new Date(selectedEvent.date).toISOString()
+                      } as any;
+                      const res = await fetch('http://localhost:5000/api/ai/generate_call_sheet?format=text', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                      });
+                      const text = await res.text();
+                      if (res.ok) {
+                        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `call_sheet_${new Date(selectedEvent.date).toISOString().split('T')[0]}.txt`;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        URL.revokeObjectURL(url);
+                      } else {
+                        console.error('Failed to generate call sheet', text);
+                      }
+                    } catch (e) {
+                      console.error('Call sheet generation error', e);
+                    }
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Generate Call Sheet
+                </Button>
+              )}
             </div>
           </div>
         )}
