@@ -1,11 +1,13 @@
 from flask import Blueprint, jsonify, request
-import json
 import os
+import json
 from typing import List, Dict, Any, Tuple
 import re
 from collections import defaultdict
 from utils.gemini_scheduler import GeminiScheduler
+# from utils.schedule_sync import ensure_scene_titles_updated  # Temporarily disabled
 
+# Create blueprint
 ai_bp = Blueprint('ai', __name__)
 
 # Data directory path
@@ -411,4 +413,31 @@ def schedule_analysis():
         return jsonify({
             'status': 'error',
             'message': f'Analysis failed: {str(e)}'
+        }), 500
+
+@ai_bp.route('/sync_scene_titles', methods=['POST'])
+def sync_scene_titles():
+    """
+    Synchronize scene titles from script.json to shooting_schedule.json
+    This ensures the shooting schedule has the latest scene titles from the script
+    """
+    try:
+        success = ensure_scene_titles_updated()
+        
+        if success:
+            return jsonify({
+                'status': 'success',
+                'message': 'Scene titles synchronized successfully',
+                'data_source': 'script.json -> shooting_schedule.json'
+            }), 200
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Failed to synchronize scene titles'
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Scene title sync failed: {str(e)}'
         }), 500

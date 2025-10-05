@@ -66,97 +66,11 @@ export const Scheduling: React.FC = () => {
   const [optimizedSchedule, setOptimizedSchedule] = useState<OptimizedSchedule | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
 
-  // Initialize demo data
   useEffect(() => {
-    const demoScenes: Scene[] = [
-      {
-        id: '1',
-        number: 1,
-        title: 'Opening Street Scene',
-        description: 'A bustling street scene with vendors and pedestrians.',
-        location: 'Mumbai Street',
-        estimatedDuration: 5,
-        characters: ['Rahul', 'Extras'],
-        props: ['Street stalls', 'Vehicles'],
-        vfx: false,
-        status: 'scheduled'
-      },
-      {
-        id: '2',
-        number: 2,
-        title: 'Coffee Shop Interior',
-        description: 'Rahul and Priya discuss the AI project over coffee.',
-        location: 'Coffee Shop - Kochi',
-        estimatedDuration: 8,
-        characters: ['Rahul', 'Priya'],
-        props: ['Coffee cups', 'Laptop'],
-        vfx: false,
-        status: 'scheduled'
-      },
-      {
-        id: '3',
-        number: 3,
-        title: 'AI Visualization',
-        description: 'Digital representation of AI processing data.',
-        location: 'Studio - Mumbai',
-        estimatedDuration: 12,
-        characters: [],
-        props: ['Green screen', 'Computers'],
-        vfx: true,
-        status: 'scheduled'
-      },
-      {
-        id: '4',
-        number: 4,
-        title: 'Beach Conversation',
-        description: 'Emotional conversation between leads at sunset.',
-        location: 'Beach - Kochi',
-        estimatedDuration: 6,
-        characters: ['Rahul', 'Priya'],
-        props: ['Beach chairs'],
-        vfx: false,
-        status: 'scheduled'
-      },
-      {
-        id: '5',
-        number: 5,
-        title: 'Office Meeting',
-        description: 'Team meeting about the project launch.',
-        location: 'Office - Mumbai',
-        estimatedDuration: 4,
-        characters: ['Rahul', 'Team Members'],
-        props: ['Conference table', 'Projector'],
-        vfx: false,
-        status: 'scheduled'
-      }
-    ];
-
-    setScenes(demoScenes);
-    generateLocationClusters(demoScenes);
+    setScenes([]);
+    setLocationClusters([]);
   }, []);
 
-  const generateLocationClusters = (sceneList: Scene[]) => {
-    const clusters: { [key: string]: Scene[] } = {};
-    
-    sceneList.forEach(scene => {
-      const location = scene.location;
-      if (!clusters[location]) {
-        clusters[location] = [];
-      }
-      clusters[location].push(scene);
-    });
-
-    const locationClusters: LocationCluster[] = Object.entries(clusters).map(([location, scenes]) => ({
-      location,
-      scenes,
-      estimatedDays: Math.ceil(scenes.reduce((total, scene) => total + scene.estimatedDuration, 0) / 8), // 8 hours per day
-      priority: scenes.length // More scenes = higher priority
-    }));
-
-    // Sort by priority (number of scenes) descending
-    locationClusters.sort((a, b) => b.priority - a.priority);
-    setLocationClusters(locationClusters);
-  };
 
   const generateAISchedule = async () => {
     setIsGeneratingSchedule(true);
@@ -228,11 +142,11 @@ export const Scheduling: React.FC = () => {
             const dayScenes = (daySchedule.scenes || []).map((scene: any) => ({
               id: (scene.scene_number || dayIndex).toString(),
               number: scene.scene_number || dayIndex,
-              title: scene.scene_title || 'Untitled Scene',
+              title: scene.scene_name || scene.scene_title || `Scene ${scene.scene_number || dayIndex}`,
               description: `${scene.location || 'Unknown Location'} - ${scene.time_of_day || 'Unknown Time'}`,
               location: scene.location || 'Unknown Location',
-              estimatedDuration: Math.ceil((scene.estimated_duration_minutes || 60) / 60), // Convert to hours
-              characters: scene.actors_needed || [],
+              estimatedDuration: Math.ceil((scene.duration || scene.estimated_duration_minutes || 60) / 60), // Convert to hours
+              characters: scene.actors || scene.actors_needed || [],
               props: [],
               vfx: false,
               status: 'scheduled' as const
@@ -276,37 +190,8 @@ export const Scheduling: React.FC = () => {
       console.error('Schedule generation error:', error);
       setScheduleError(error.message || 'Network error: Unable to connect to scheduling service');
       
-      // Fallback to original mock logic if API fails
-      const events: ScheduleEvent[] = [];
-      let currentScheduleDate = new Date();
-      currentScheduleDate.setDate(currentScheduleDate.getDate() + 1);
-
-      locationClusters.forEach((cluster, clusterIndex) => {
-        const scenesPerDay = Math.ceil(8 / (cluster.scenes.reduce((avg, scene) => avg + scene.estimatedDuration, 0) / cluster.scenes.length));
-        
-        for (let i = 0; i < cluster.scenes.length; i += scenesPerDay) {
-          const dayScenes = cluster.scenes.slice(i, i + scenesPerDay);
-          const totalDuration = dayScenes.reduce((total, scene) => total + scene.estimatedDuration, 0);
-          
-          const event: ScheduleEvent = {
-            id: `fallback-event-${clusterIndex}-${Math.floor(i / scenesPerDay)}`,
-            date: new Date(currentScheduleDate),
-            startTime: '09:00',
-            endTime: `${9 + Math.ceil(totalDuration)}:00`,
-            location: cluster.location,
-            scenes: dayScenes,
-            cast: [...new Set(dayScenes.flatMap(scene => scene.characters))],
-            crew: ['Director', 'DOP', 'Sound Engineer', 'Assistant Director'],
-            status: 'scheduled',
-            notes: `Fallback schedule: ${dayScenes.length} scene(s) at ${cluster.location}`
-          };
-
-          events.push(event);
-          currentScheduleDate.setDate(currentScheduleDate.getDate() + 1);
-        }
-      });
-
-      setScheduleEvents(events);
+      // No fallback - show error message to user
+      console.log('No fallback schedule available - user should see error message');
     } finally {
       setIsGeneratingSchedule(false);
       setShowAIScheduleModal(false);
