@@ -16,7 +16,6 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { RoleGuard } from '../../components/auth/RoleGuard';
 import { formatDate, getStatusColor, getPriorityColor } from '../../utils/formatters';
-import vfxData from '../../data/vfx.json';
 
 interface VFXShot {
   id: string;

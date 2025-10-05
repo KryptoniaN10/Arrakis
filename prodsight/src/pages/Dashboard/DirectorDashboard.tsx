@@ -23,7 +23,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { KPICard } from '../../components/dashboard/KPICard';
-import { Task, Budget, Script, User } from '../../api/endpoints';
+import { Task, Budget, Script, User, Scene } from '../../api/endpoints';
 
 interface DirectorDashboardProps {
   user: User;
@@ -32,20 +32,7 @@ interface DirectorDashboardProps {
   script: Script | null;
 }
 
-interface Scene {
-  id: string;
-  number: number;
-  title: string;
-  description: string;
-  location: string;
-  timeOfDay: 'DAY' | 'NIGHT' | 'DAWN' | 'DUSK';
-  characters: string[];
-  props: string[];
-  vfx: boolean;
-  estimatedDuration: number;
-  status: 'draft' | 'in_review' | 'approved';
-  notes?: string;
-}
+// Use the Scene interface from API endpoints
 
 interface ChatMessage {
   id: string;
@@ -60,7 +47,7 @@ export const DirectorDashboard: React.FC<DirectorDashboardProps> = ({
   script,
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [scriptContent, setScriptContent] = useState('# SAMPLE SCRIPT\n\nFADE IN:\n\nEXT. MUMBAI STREET - DAY\n\nA bustling street scene with vendors and pedestrians.\n\nINT. COFFEE SHOP - DAY\n\nRAHUL sits across from PRIYA, discussing their project.\n\nRAHUL\nThis AI system will revolutionize film production.\n\nPRIYA\n(excited)\nImagine the possibilities!\n\nFADE OUT.');
+  const [scriptContent, setScriptContent] = useState('');
   const [isEditingScript, setIsEditingScript] = useState(false);
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [editingScene, setEditingScene] = useState<string | null>(null);
@@ -69,8 +56,9 @@ export const DirectorDashboard: React.FC<DirectorDashboardProps> = ({
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [loading, setLoading] = useState(false);
 
-  const approvedScenes = script?.scenes.filter(scene => scene.status === 'approved').length || 0;
+  const approvedScenes = script?.scenes.filter(scene => scene.scene_status === 'Approved').length || 0;
   const totalScenes = script?.totalScenes || 0;
   const vfxScenes = script?.vfxScenes || 0;
   const totalDuration = script?.totalEstimatedDuration || 0;
@@ -82,55 +70,31 @@ export const DirectorDashboard: React.FC<DirectorDashboardProps> = ({
     { id: 'scene-breakdown', label: 'Scene Breakdown', icon: FileText },
   ];
 
-  // Initialize demo scenes
+  // Load scenes and script content from backend
   React.useEffect(() => {
-    if (scenes.length === 0) {
-      setScenes([
-        {
-          id: '1',
-          number: 1,
-          title: 'Opening Street Scene',
-          description: 'A bustling street scene with vendors and pedestrians.',
-          location: 'Mumbai Street',
-          timeOfDay: 'DAY',
-          characters: ['Extras', 'Vendors'],
-          props: ['Street stalls', 'Vehicles'],
-          vfx: false,
-          estimatedDuration: 5,
-          status: 'approved',
-          notes: 'Need crowd control permits'
-        },
-        {
-          id: '2',
-          number: 2,
-          title: 'Coffee Shop Conversation',
-          description: 'Rahul and Priya discuss the AI project over coffee.',
-          location: 'Coffee Shop Interior',
-          timeOfDay: 'DAY',
-          characters: ['Rahul', 'Priya'],
-          props: ['Coffee cups', 'Laptop', 'Documents'],
-          vfx: false,
-          estimatedDuration: 8,
-          status: 'in_review',
-          notes: 'Consider close-up shots for dialogue'
-        },
-        {
-          id: '3',
-          number: 3,
-          title: 'AI Visualization',
-          description: 'Digital representation of AI processing data.',
-          location: 'Virtual Environment',
-          timeOfDay: 'DAY',
-          characters: [],
-          props: ['Computer screens', 'Data visualizations'],
-          vfx: true,
-          estimatedDuration: 12,
-          status: 'draft',
-          notes: 'Heavy VFX sequence - coordinate with VFX team'
-        }
-      ]);
+    if (script?.scenes) {
+      setScenes(script.scenes);
     }
-  }, [scenes.length]);
+  }, [script]);
+
+  // Load script text from backend
+  React.useEffect(() => {
+    const loadScriptText = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/script/text');
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            setScriptContent(result.data.content || '# SAMPLE SCRIPT\n\nFADE IN:\n\nEXT. MUMBAI STREET - DAY\n\nA bustling street scene with vendors and pedestrians.\n\nINT. COFFEE SHOP - DAY\n\nRAHUL sits across from PRIYA, discussing their project.\n\nRAHUL\nThis AI system will revolutionize film production.\n\nPRIYA\n(excited)\nImagine the possibilities!\n\nFADE OUT.');
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load script text:', error);
+        setScriptContent('# SAMPLE SCRIPT\n\nFADE IN:\n\nEXT. MUMBAI STREET - DAY\n\nA bustling street scene with vendors and pedestrians.\n\nINT. COFFEE SHOP - DAY\n\nRAHUL sits across from PRIYA, discussing their project.\n\nRAHUL\nThis AI system will revolutionize film production.\n\nPRIYA\n(excited)\nImagine the possibilities!\n\nFADE OUT.');
+      }
+    };
+    loadScriptText();
+  }, []);
 
   const handleScriptBreakdown = () => {
     // Simulate AI processing
@@ -170,23 +134,63 @@ export const DirectorDashboard: React.FC<DirectorDashboardProps> = ({
     setChatInput('');
   };
 
-  const saveScript = () => {
-    setIsEditingScript(false);
-    // Simulate saving to backend
-    console.log('Script saved:', scriptContent);
+  const saveScript = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:5000/api/script/text', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: scriptContent }),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setIsEditingScript(false);
+          console.log('Script saved successfully');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to save script:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateScene = (sceneId: string, updates: Partial<Scene>) => {
-    setScenes(prev => prev.map(scene => 
-      scene.id === sceneId ? { ...scene, ...updates } : scene
-    ));
-    setEditingScene(null);
+  const updateScene = async (sceneId: string, updates: Partial<Scene>) => {
+    try {
+      setLoading(true);
+      // Update scene in backend
+      const response = await fetch(`http://localhost:5000/api/script/scene/${sceneId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setScenes(prev => prev.map(scene => 
+            scene.id === sceneId ? { ...scene, ...updates } : scene
+          ));
+          setEditingScene(null);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to update scene:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredScenes = scenes.filter(scene => {
-    const matchesSearch = scene.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         scene.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || scene.status === filterStatus;
+    const matchesSearch = (scene.title ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (scene.scene_description ?? "").toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = filterStatus === 'all' || scene.scene_status === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
@@ -282,15 +286,15 @@ export const DirectorDashboard: React.FC<DirectorDashboardProps> = ({
           </h3>
           {script && (
             <div className="space-y-4">
-              {['approved', 'in_review', 'draft'].map((status, index) => {
-                const count = script.scenes.filter(scene => scene.status === status).length;
+              {['Approved', 'In Review', 'Not Shot'].map((status, index) => {
+                const count = script.scenes.filter(scene => scene.scene_status === status).length;
                 const percentage = totalScenes > 0 ? (count / totalScenes) * 100 : 0;
                 
                 return (
                   <div key={status} className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-300 capitalize">
-                        {status.replace('_', ' ')}
+                      <span className="font-medium text-gray-700 dark:text-gray-300">
+                        {status}
                       </span>
                       <span className="text-gray-500 dark:text-gray-400">
                         {count} scenes ({Math.round(percentage)}%)
@@ -302,9 +306,9 @@ export const DirectorDashboard: React.FC<DirectorDashboardProps> = ({
                         animate={{ width: `${percentage}%` }}
                         transition={{ delay: 0.3 + index * 0.1, duration: 0.8 }}
                         className={`h-2 rounded-full ${
-                          status === 'approved'
+                          status === 'Approved'
                             ? 'bg-green-500'
-                            : status === 'in_review'
+                            : status === 'In Review'
                             ? 'bg-yellow-500'
                             : 'bg-gray-400'
                         }`}
@@ -333,29 +337,31 @@ export const DirectorDashboard: React.FC<DirectorDashboardProps> = ({
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      Scene {scene.number}
+                      Scene {scene.scene_number}
                     </span>
-                    {scene.vfx && (
+                    {scene.vfx_required && (
                       <Zap className="h-3 w-3 text-purple-500" />
                     )}
                   </div>
                   <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
-                    {scene.description}
+                    {scene.scene_description}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {scene.location} • {scene.estimatedDuration}min
+                    {scene.location} • {scene.estimated_runtime_minutes}min
                   </p>
                 </div>
                 <span
                   className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    scene.status === 'approved'
+                    scene.scene_status === 'Approved'
                       ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                      : scene.status === 'in_review'
+                      : scene.scene_status === 'In Review'
                       ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+                      : scene.scene_status === 'Completed'
+                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
                       : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                   }`}
                 >
-                  {scene.status.replace('_', ' ')}
+                  {scene.scene_status}
                 </span>
               </div>
             ))}
@@ -450,9 +456,11 @@ export const DirectorDashboard: React.FC<DirectorDashboardProps> = ({
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 >
                   <option value="all">All Status</option>
-                  <option value="draft">Draft</option>
-                  <option value="in_review">In Review</option>
-                  <option value="approved">Approved</option>
+                  <option value="Not Shot">Not Shot</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                  <option value="In Review">In Review</option>
+                  <option value="Approved">Approved</option>
                 </select>
               </div>
               <button
@@ -485,9 +493,9 @@ export const DirectorDashboard: React.FC<DirectorDashboardProps> = ({
                       <td className="py-3 px-4">
                         <div className="flex items-center space-x-2">
                           <span className="font-medium text-gray-900 dark:text-gray-100">
-                            {scene.number}
+                            {scene.scene_number}
                           </span>
-                          {scene.vfx && <Zap className="h-4 w-4 text-purple-500" />}
+                          {scene.vfx_required && <Zap className="h-4 w-4 text-purple-500" />}
                         </div>
                       </td>
                       <td className="py-3 px-4">
@@ -501,7 +509,7 @@ export const DirectorDashboard: React.FC<DirectorDashboardProps> = ({
                         ) : (
                           <div>
                             <p className="font-medium text-gray-900 dark:text-gray-100">{scene.title}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{scene.description}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{scene.scene_description}</p>
                           </div>
                         )}
                       </td>
@@ -521,34 +529,38 @@ export const DirectorDashboard: React.FC<DirectorDashboardProps> = ({
                         {editingScene === scene.id ? (
                           <input
                             type="number"
-                            value={scene.estimatedDuration}
-                            onChange={(e) => updateScene(scene.id, { estimatedDuration: parseInt(e.target.value) })}
+                            value={scene.estimated_runtime_minutes}
+                            onChange={(e) => updateScene(scene.id, { estimated_runtime_minutes: parseInt(e.target.value) })}
                             className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                           />
                         ) : (
-                          <span>{scene.estimatedDuration}min</span>
+                          <span>{scene.estimated_runtime_minutes}min</span>
                         )}
                       </td>
                       <td className="py-3 px-4">
                         {editingScene === scene.id ? (
                           <select
-                            value={scene.status}
-                            onChange={(e) => updateScene(scene.id, { status: e.target.value as Scene['status'] })}
+                            value={scene.scene_status}
+                            onChange={(e) => updateScene(scene.id, { scene_status: e.target.value as Scene['scene_status'] })}
                             className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                           >
-                            <option value="draft">Draft</option>
-                            <option value="in_review">In Review</option>
-                            <option value="approved">Approved</option>
+                            <option value="Not Shot">Not Shot</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="In Review">In Review</option>
+                            <option value="Approved">Approved</option>
                           </select>
                         ) : (
                           <span className={`px-2 py-1 text-xs rounded-full ${
-                            scene.status === 'approved'
+                            scene.scene_status === 'Approved'
                               ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                              : scene.status === 'in_review'
+                              : scene.scene_status === 'In Review'
                               ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                              : scene.scene_status === 'Completed'
+                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
                               : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                           }`}>
-                            {scene.status.replace('_', ' ')}
+                            {scene.scene_status}
                           </span>
                         )}
                       </td>
