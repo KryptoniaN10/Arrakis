@@ -217,3 +217,118 @@ export const assetsApi = {
     ];
   }
 };
+
+// AI Scheduling API Types
+export interface ScheduleConstraints {
+  actor_constraints?: {
+    [actorName: string]: {
+      available_days?: string[];
+      max_consecutive_days?: number;
+      preferred_call_times?: string[];
+    };
+  };
+  location_preferences?: {
+    [locationName: string]: {
+      setup_time_hours?: number;
+      weather_dependent?: boolean;
+      equipment_requirements?: string[];
+    };
+  };
+}
+
+export interface OptimizedSchedule {
+  scheduling_strategy: string;
+  total_shooting_days: number;
+  daily_schedules: Array<{
+    day: number;
+    date: string;
+    location_focus: string;
+    scenes: Array<{
+      scene_number: number;
+      scene_title: string;
+      location: string;
+      time_of_day: string;
+      estimated_duration_minutes: number;
+      actors_needed: string[];
+      extras_needed: string[];
+      call_time: string;
+      estimated_wrap: string;
+      setup_notes: string;
+    }>;
+    daily_summary: {
+      total_scenes: number;
+      total_duration_minutes: number;
+      primary_actors: string[];
+      location_changes: number;
+      special_requirements: string[];
+    };
+  }>;
+  actor_schedules: {
+    [actorName: string]: {
+      total_working_days: number;
+      scenes: number[];
+      schedule_notes: string;
+    };
+  };
+  location_schedule: {
+    [locationName: string]: {
+      days_needed: number[];
+      total_scenes: number;
+      setup_requirements: string;
+    };
+  };
+  optimization_benefits: string[];
+  potential_risks: string[];
+}
+
+export interface ScheduleGenerationResponse {
+  status: 'success' | 'warning' | 'error';
+  message: string;
+  schedule_data?: OptimizedSchedule;
+  generation_info?: {
+    generated_at: string;
+    ai_model: string;
+    input_scenes: number;
+    prompt_length?: number;
+  };
+  saved_file?: string;
+  total_shooting_days?: number;
+  is_mock?: boolean;
+}
+
+export interface ScheduleAnalysis {
+  total_scenes: number;
+  unique_locations: number;
+  location_clusters_identified: number;
+  time_distribution: {
+    DAY: number;
+    DUSK: number;
+    NIGHT: number;
+  };
+  busiest_actors: { [actorName: string]: number };
+  locations_breakdown: { [locationName: string]: number };
+  optimization_potential: {
+    can_group_locations: boolean;
+    location_savings: number;
+  };
+  data_source: string;
+}
+
+// AI Scheduling API endpoints
+export const aiSchedulingApi = {
+  // Generate AI-powered schedule using Gemini
+  generateGeminiSchedule: (constraints?: ScheduleConstraints) => 
+    apiClient.post<ScheduleGenerationResponse>('/ai/generate_gemini_schedule', constraints || {}),
+  
+  // Get schedule preview (top 5 scenes)
+  getSchedulePreview: () => 
+    apiClient.get<{ status: string; preview_scenes: any[]; total_scenes_available: number }>('/ai/preview_schedule'),
+  
+  // Analyze current schedule
+  analyzeSchedule: () => 
+    apiClient.get<{ status: string; analysis: ScheduleAnalysis }>('/ai/schedule_analysis'),
+  
+  // Legacy endpoint for backward compatibility
+  sortSchedule: () => 
+    apiClient.post<any>('/ai/sort_schedule', {}),
+};
