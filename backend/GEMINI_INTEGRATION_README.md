@@ -134,7 +134,7 @@ pip install requests  # For Gemini API calls
 ### **2. Set Gemini API Key**
 ```bash
 # Windows
-set GEMINI_API_KEY=your_gemini_api_key_here
+set GEMINI_API_KEY=AIzaSyA8PGrty0-WSAoZ0HSkGK0v3PBJu2hdUN4
 
 # Linux/Mac
 export GEMINI_API_KEY=your_gemini_api_key_here
