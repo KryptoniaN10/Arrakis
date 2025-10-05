@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   FileText,
@@ -24,6 +24,8 @@ import { RoleGuard } from '../../components/auth/RoleGuard';
 import { useScript } from '../../hooks/useScript';
 import { useAI } from '../../hooks/useAI';
 import { getStatusColor } from '../../utils/formatters';
+import { scriptApi } from '../../api/endpoints';
+import { useNotification } from '../../providers/NotificationProvider';
 
 interface ChatMessage {
   id: string;
@@ -33,12 +35,13 @@ interface ChatMessage {
 }
 
 export const Script: React.FC = () => {
-  const { script, loading, updateScene } = useScript();
+  const { script, loading, updateScene, updateScript } = useScript();
   const { breakdownScript, loading: aiLoading } = useAI();
+  const { showSuccess, showError } = useNotification();
   const [activeTab, setActiveTab] = useState('overview');
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showBreakdownModal, setShowBreakdownModal] = useState(false);
-  const [scriptText, setScriptText] = useState('# SAMPLE SCRIPT\n\nFADE IN:\n\nEXT. MUMBAI STREET - DAY\n\nA bustling street scene with vendors and pedestrians.\n\nINT. COFFEE SHOP - DAY\n\nRAHUL sits across from PRIYA, discussing their project.\n\nRAHUL\nThis AI system will revolutionize film production.\n\nPRIYA\n(excited)\nImagine the possibilities!\n\nFADE OUT.');
+  const [scriptText, setScriptText] = useState('');
   const [breakdown, setBreakdown] = useState<any>(null);
   const [isEditingScript, setIsEditingScript] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
@@ -48,6 +51,22 @@ export const Script: React.FC = () => {
   const [editingScene, setEditingScene] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+
+  useEffect(() => {
+    const fetchScriptText = async () => {
+      try {
+        const response = await scriptApi.getScriptText();
+        if (response.success) {
+          setScriptText(response.data.content);
+        } else {
+          showError('Failed to load script text.');
+        }
+      } catch (error) {
+        showError('An error occurred while fetching script text.');
+      }
+    };
+    fetchScriptText();
+  }, []);
 
   const handleScriptUpload = async () => {
     if (scriptText.trim()) {
@@ -79,10 +98,25 @@ export const Script: React.FC = () => {
     }
   };
 
-  const saveScript = () => {
+  const saveScript = async () => {
     setIsEditingScript(false);
-    console.log('Script saved:', scriptText);
-    // Here you would typically save to backend
+    
+    try {
+      // 1. Save raw text to script.txt
+      await scriptApi.updateScriptText(scriptText);
+      showSuccess('Script text saved successfully.');
+
+      // 2. Run AI breakdown
+      const breakdownResult = await breakdownScript(scriptText);
+
+      if (breakdownResult) {
+        // 3. Save structured data to script.json
+        await updateScript(breakdownResult);
+        showSuccess('Script breakdown complete and saved.');
+      }
+    } catch (error) {
+      showError('Failed to save script.');
+    }
   };
 
   const handleChatSubmit = (e: React.FormEvent) => {
@@ -234,7 +268,7 @@ export const Script: React.FC = () => {
             <div className="card p-6 text-center">
               <MapPin className="h-8 w-8 text-red-500 mx-auto mb-2" />
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {script.locations.length}
+                {script.locations?.length || 0}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">Locations</p>
             </div>
@@ -279,8 +313,8 @@ export const Script: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {script.scenes.map((scene) => (
-                    <tr key={scene.id} className="border-b border-gray-100 dark:border-gray-800">
+                  {script.scenes?.map((scene, index) => (
+                    <tr key={scene.id || `scene-${index}`} className="border-b border-gray-100 dark:border-gray-800">
                       <td className="py-3 px-4 font-medium text-gray-900 dark:text-gray-100">
                         {scene.number}
                       </td>
@@ -304,7 +338,7 @@ export const Script: React.FC = () => {
                       </td>
                       <td className="py-3 px-4">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(scene.status)}`}>
-                          {scene.status.replace('_', ' ')}
+                          {scene.status?.replace('_', ' ')}
                         </span>
                       </td>
                       <td className="py-3 px-4">
@@ -342,10 +376,10 @@ export const Script: React.FC = () => {
             >
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
                 <Users className="h-5 w-5 mr-2" />
-                Characters ({script.characters.length})
+                Characters ({script.characters?.length || 0})
               </h3>
               <div className="flex flex-wrap gap-2">
-                {script.characters.map((character) => (
+                {script.characters?.map((character) => (
                   <span
                     key={character}
                     className="px-3 py-1 text-sm bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 rounded-full"
@@ -364,10 +398,10 @@ export const Script: React.FC = () => {
             >
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
                 <MapPin className="h-5 w-5 mr-2" />
-                Locations ({script.locations.length})
+                Locations ({script.locations?.length || 0})
               </h3>
               <div className="flex flex-wrap gap-2">
-                {script.locations.map((location) => (
+                {script.locations?.map((location) => (
                   <span
                     key={location}
                     className="px-3 py-1 text-sm bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 rounded-full"
@@ -521,8 +555,8 @@ export const Script: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {script.scenes.map((scene) => (
-                      <tr key={scene.id} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    {script.scenes?.map((scene, index) => (
+                      <tr key={scene.id || `scene-${index}`} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td className="py-3 px-4">
                           <div className="flex items-center space-x-2">
                             <span className="font-medium text-gray-900 dark:text-gray-100">
@@ -587,7 +621,7 @@ export const Script: React.FC = () => {
                             </select>
                           ) : (
                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(scene.status)}`}>
-                              {scene.status.replace('_', ' ')}
+                              {scene.status?.replace('_', ' ')}
                             </span>
                           )}
                         </td>

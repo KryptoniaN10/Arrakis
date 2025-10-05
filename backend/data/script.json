@@ -1,0 +1,81 @@
+{
+  "title": "Avatar",
+  "total_scenes": 165,
+  "total_runtime_minutes": 298,
+  "total_vfx_scenes": 40,
+  "scenes": [
+    {
+      "id": "1759644393584",
+      "number": "1",
+      "description": "INT. OFFICE BUILDING - DAY. Protagonist enters the lobby, looking determined.",
+      "location": "Office Building Interior",
+      "timeOfDay": "Day",
+      "estimatedDuration": 3,
+      "characters": [
+        "Protagonist",
+        "Security Guard"
+      ],
+      "props": [
+        "Briefcase",
+        "ID Badge",
+        "Security Desk"
+      ],
+      "vfx": false,
+      "status": "draft",
+      "notes": "Simple establishing shot, minimal setup required"
+    },
+    {
+      "id": "1759644393585",
+      "number": "2",
+      "description": "EXT. CITY STREET - NIGHT. High-speed chase through downtown.",
+      "location": "City Street",
+      "timeOfDay": "Night",
+      "estimatedDuration": 8,
+      "characters": [
+        "Protagonist",
+        "Antagonist"
+      ],
+      "props": [
+        "Cars",
+        "Street lights",
+        "Traffic"
+      ],
+      "vfx": true,
+      "status": "draft",
+      "notes": "Complex action sequence requiring VFX for explosions and car stunts"
+    },
+    {
+      "id": "1759644393586",
+      "number": "3",
+      "description": "INT. APARTMENT - DAWN. Quiet moment of reflection.",
+      "location": "Apartment Interior",
+      "timeOfDay": "Dawn",
+      "estimatedDuration": 4,
+      "characters": [
+        "Protagonist"
+      ],
+      "props": [
+        "Coffee mug",
+        "Newspaper",
+        "Window"
+      ],
+      "vfx": false,
+      "status": "draft",
+      "notes": "Character development scene with natural lighting"
+    }
+  ],
+  "lastModified": "2025-10-05",
+  "totalScenes": 3,
+  "totalEstimatedDuration": 15,
+  "vfxScenes": 1,
+  "locations": [
+    "Apartment Interior",
+    "City Street",
+    "Office Building Interior"
+  ],
+  "characters": [
+    "Security Guard",
+    "Antagonist",
+    "Protagonist"
+  ]
+}

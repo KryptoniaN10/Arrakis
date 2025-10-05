@@ -1,12 +1,5 @@
 import { apiClient } from './client';
 
-// Import mock data
-import usersData from '../data/users.json';
-import tasksData from '../data/tasks.json';
-import budgetData from '../data/budget.json';
-import scriptData from '../data/script.json';
-import vfxData from '../data/vfx.json';
-
 // Type definitions
 export interface User {
   id: string;
@@ -60,16 +53,36 @@ export interface Budget {
 
 export interface Scene {
   id: string;
+  scene_number: number;
+  title: string;
+  int_ext: 'INT' | 'EXT';
+  day_night: 'DAY' | 'NIGHT' | 'DAWN' | 'DUSK';
+  location: string;
+  estimated_runtime_minutes: number;
+  scene_description: string;
+  characters: string[];
+  extras: string[];
+  props: string[];
+  wardrobe: string[];
+  makeup_hair: string[];
+  vehicles_animals_fx: string[];
+  set_dressing: string[];
+  special_equipment: string[];
+  stunts_vfx: string[];
+  sound_requirements: string[];
+  mood_tone: string;
+  scene_complexity: 'Low' | 'Medium' | 'High';
+  vfx_required: boolean;
+  vfx_details: string;
+  scene_status: 'Not Shot' | 'In Progress' | 'Completed' | 'In Review' | 'Approved';
+  notes?: string;
+  // Legacy fields for backward compatibility
   number: string;
   description: string;
-  location: string;
   timeOfDay: string;
   estimatedDuration: number;
-  characters: string[];
-  props: string[];
   vfx: boolean;
   status: string;
-  notes?: string;
 }
 
 export interface Script {
@@ -113,58 +126,47 @@ export const authApi = {
 };
 
 export const usersApi = {
-  getUsers: () => apiClient.get<User[]>('/users', usersData),
-  getUserById: (id: string) => 
-    apiClient.get<User[]>('/users', usersData).then(response => ({
-      ...response,
-      data: response.data.find(user => user.id === id) || null
-    })),
+  getUsers: () => apiClient.get<User[]>('/users'),
+  getUserById: (id: string) => apiClient.get<User>(`/users/${id}`),
 };
 
 export const tasksApi = {
-  getTasks: () => apiClient.get<Task[]>('/tasks', tasksData),
-  createTask: (task: Omit<Task, 'id'>) => 
-    apiClient.post('/tasks', task, tasksData),
-  updateTask: (id: string, task: Partial<Task>) => 
-    apiClient.put('/tasks', id, task, tasksData),
-  deleteTask: (id: string) => 
-    apiClient.delete('/tasks', id, tasksData),
-  getTasksByAssignee: (assigneeId: string) =>
-    apiClient.get<Task[]>('/tasks', tasksData).then(response => ({
-      ...response,
-      data: response.data.filter(task => task.assigneeId === assigneeId)
-    })),
+  getTasks: () => apiClient.get<Task[]>('/tasks'),
+  createTask: (task: Omit<Task, 'id'>) => apiClient.post('/tasks', task),
+  updateTask: (id: string, task: Partial<Task>) => apiClient.put(`/tasks/${id}`, task),
+  deleteTask: (id: string) => apiClient.delete(`/tasks/${id}`),
+  getTasksByAssignee: (assigneeId: string) => apiClient.get<Task[]>(`/tasks/assignee/${assigneeId}`),
 };
 
 export const budgetApi = {
-  getBudget: () => apiClient.get<Budget>('/budget', budgetData),
+  getBudget: () => apiClient.get<Budget>('/budget'),
   updateBudgetCategory: (categoryName: string, updates: Partial<BudgetCategory>) =>
-    apiClient.put('/budget/category', categoryName, updates, budgetData),
+    apiClient.put(`/budget/category/${categoryName}`, updates),
   addBudgetEntry: (entry: Omit<BudgetHistory, 'date'>) =>
-    apiClient.post('/budget/history', { ...entry, date: new Date().toISOString() }, budgetData),
+    apiClient.post('/budget/history', { ...entry, date: new Date().toISOString() }),
 };
 
 export const scriptApi = {
-  getScript: () => apiClient.get<Script>('/script', scriptData),
-  updateScript: (script: Partial<Script>) => 
-    apiClient.put('/script', 'main', script, scriptData),
-  updateScene: (sceneId: string, scene: Partial<Scene>) =>
-    apiClient.put('/script/scene', sceneId, scene, scriptData),
-  addScene: (scene: Omit<Scene, 'id'>) =>
-    apiClient.post('/script/scenes', scene, scriptData),
+  getScript: () => apiClient.get<Script>('/script'),
+  updateScript: (script: Partial<Script>) => apiClient.put('/script', script),
+  updateScene: (sceneId: string, scene: Partial<Scene>) => apiClient.put(`/script/scene/${sceneId}`, scene),
+  addScene: (scene: Omit<Scene, 'id'>) => apiClient.post('/script/scenes', scene),
+  getScenes: () => apiClient.get<Scene[]>('/script/scenes'),
+  getScene: (sceneId: string) => apiClient.get<Scene>(`/script/scene/${sceneId}`),
+  getScriptText: () => apiClient.get<{content: string}>('/script/text'),
+  updateScriptText: (content: string) => apiClient.put('/script/text', { content }),
 };
 
 export const vfxApi = {
-  getVFXShots: () => apiClient.get<VFXShot[]>('/vfx', vfxData),
+  getVFXShots: () => apiClient.get<VFXShot[]>('/vfx'),
   createVFXShot: (shot: Omit<VFXShot, 'id' | 'versions'>) =>
-    apiClient.post('/vfx', { ...shot, versions: [] }, vfxData),
-  updateVFXShot: (id: string, shot: Partial<VFXShot>) =>
-    apiClient.put('/vfx', id, shot, vfxData),
+    apiClient.post('/vfx', { ...shot, versions: [] }),
+  updateVFXShot: (id: string, shot: Partial<VFXShot>) => apiClient.put(`/vfx/${id}`, shot),
   addVFXVersion: (shotId: string, version: Omit<VFXVersion, 'date'>) =>
-    apiClient.put('/vfx/version', shotId, { 
+    apiClient.put(`/vfx/version/${shotId}`, { 
       ...version, 
       date: new Date().toISOString() 
-    }, vfxData),
+    }),
 };
 
 export const assetsApi = {

@@ -106,6 +106,13 @@ export const useScript = (): UseScriptReturn => {
 
   useEffect(() => {
     fetchScript();
+    
+    // Set up polling for updates every 30 seconds
+    const interval = setInterval(() => {
+      fetchScript();
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   return {

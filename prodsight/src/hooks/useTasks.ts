@@ -109,6 +109,13 @@ export const useTasks = (): UseTasksReturn => {
   useEffect(() => {
     if (user) {
       fetchTasks();
+      
+      // Set up polling for updates every 30 seconds
+      const interval = setInterval(() => {
+        fetchTasks();
+      }, 30000);
+      
+      return () => clearInterval(interval);
     }
   }, [user]);
 
