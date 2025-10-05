@@ -170,7 +170,7 @@ def analyze_script_text_route():
             if result:
                 scene_data = result[0] if isinstance(result, list) else result
                 all_scenes.append(scene_data)
-            time.sleep(1) # Rate limiting
+            time.sleep(4) # Rate limiting
 
         final_json = {
             "title": "Analyzed Script",
