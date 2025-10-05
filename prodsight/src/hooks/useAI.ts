@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { 
-  aiService, 
-  ScriptBreakdownResult, 
-  BudgetForecast, 
-  TaskAssignmentSuggestion, 
-  ConflictResolution, 
-  ProductionReport 
-} from '../api/aiMock';
+import { analysisApi, Script } from '../api/endpoints';
 import { useNotification } from '../providers/NotificationProvider';
+
+// Assuming these are defined somewhere, for now we will use 'any'
+type BudgetForecast = any;
+type TaskAssignmentSuggestion = any;
+type ConflictResolution = any;
+type ProductionReport = any;
+type ScriptBreakdownResult = Script;
+
 
 interface UseAIReturn {
   loading: boolean;
@@ -26,7 +27,7 @@ export const useAI = (): UseAIReturn => {
   const { showSuccess, showError, showLoading, dismiss } = useNotification();
 
   const handleAIOperation = async <T>(
-    operation: () => Promise<T>,
+    operation: () => Promise<{ success: boolean, data: T, message?: string }>,
     loadingMessage: string,
     successMessage: string
   ): Promise<T | null> => {
@@ -39,9 +40,14 @@ export const useAI = (): UseAIReturn => {
       const result = await operation();
       
       dismiss(toastId);
-      showSuccess(successMessage);
       
-      return result;
+      if (result.success) {
+        showSuccess(successMessage);
+        return result.data;
+      } else {
+        throw new Error(result.message || 'AI operation failed');
+      }
+      
     } catch (err: any) {
       setError(err.message || 'AI operation failed');
       showError(err.message || 'AI operation failed');
@@ -53,48 +59,36 @@ export const useAI = (): UseAIReturn => {
 
   const breakdownScript = async (scriptText: string): Promise<ScriptBreakdownResult | null> => {
     return handleAIOperation(
-      () => aiService.breakdownScript(scriptText),
+      () => analysisApi.analyzeScriptText(scriptText),
       'Analyzing script with AI...',
       'Script breakdown completed successfully'
     );
   };
 
   const forecastBudget = async (budgetData: any): Promise<BudgetForecast | null> => {
-    return handleAIOperation(
-      () => aiService.forecastBudget(budgetData),
-      'Generating budget forecast...',
-      'Budget forecast generated successfully'
-    );
+    // This is a placeholder, it should be implemented if needed
+    return Promise.resolve(null);
   };
 
   const suggestTaskAssignments = async (
     tasks: any[], 
     users: any[]
   ): Promise<TaskAssignmentSuggestion[] | null> => {
-    return handleAIOperation(
-      () => aiService.suggestTaskAssignments(tasks, users),
-      'Analyzing optimal task assignments...',
-      'Task assignment suggestions generated'
-    );
+    // This is a placeholder, it should be implemented if needed
+    return Promise.resolve(null);
   };
 
   const detectConflicts = async (
     tasks: any[], 
     schedule: any
   ): Promise<ConflictResolution | null> => {
-    return handleAIOperation(
-      () => aiService.detectConflicts(tasks, schedule),
-      'Detecting potential conflicts...',
-      'Conflict analysis completed'
-    );
+    // This is a placeholder, it should be implemented if needed
+    return Promise.resolve(null);
   };
 
   const generateReport = async (projectData: any): Promise<ProductionReport | null> => {
-    return handleAIOperation(
-      () => aiService.generateReport(projectData),
-      'Generating production report...',
-      'Production report generated successfully'
-    );
+    // This is a placeholder, it should be implemented if needed
+    return Promise.resolve(null);
   };
 
   const clearError = () => {

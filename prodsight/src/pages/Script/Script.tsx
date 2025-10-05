@@ -24,7 +24,7 @@ import { RoleGuard } from '../../components/auth/RoleGuard';
 import { useScript } from '../../hooks/useScript';
 import { useAI } from '../../hooks/useAI';
 import { getStatusColor } from '../../utils/formatters';
-import { scriptApi } from '../../api/endpoints';
+import { scriptApi, analysisApi } from '../../api/endpoints';
 import { useNotification } from '../../providers/NotificationProvider';
 
 interface ChatMessage {
@@ -45,6 +45,7 @@ export const Script: React.FC = () => {
   const [breakdown, setBreakdown] = useState<any>(null);
   const [isEditingScript, setIsEditingScript] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -68,33 +69,33 @@ export const Script: React.FC = () => {
     fetchScriptText();
   }, []);
 
-  const handleScriptUpload = async () => {
-    if (scriptText.trim()) {
-      const result = await breakdownScript(scriptText);
-      if (result) {
-        setBreakdown(result);
-        setShowUploadModal(false);
-        setShowBreakdownModal(true);
+  const handlePdfUpload = async (file: File) => {
+    if (file) {
+      try {
+        showSuccess('Uploading and analyzing script...');
+        const response = await analysisApi.analyzeScript(file);
+        if (response.success) {
+          await updateScript(response.data);
+          showSuccess('Script analysis complete and saved.');
+          setShowUploadModal(false);
+          setSelectedFile(null);
+        } else {
+          showError(response.message || 'Failed to analyze script.');
+        }
+      } catch (error) {
+        showError('An error occurred during script analysis.');
       }
     }
   };
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: FileText },
-    { id: 'editor', label: 'Script Editor', icon: Edit },
-    { id: 'breakdown', label: 'Scene Breakdown', icon: Zap },
-  ];
-
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
+    if (file && file.type === 'application/pdf') {
+      setSelectedFile(file);
       setUploadedFileName(file.name);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-        setScriptText(content);
-      };
-      reader.readAsText(file);
+    }
+    else {
+        showError('Please upload a PDF file.');
     }
   };
 
@@ -102,15 +103,12 @@ export const Script: React.FC = () => {
     setIsEditingScript(false);
     
     try {
-      // 1. Save raw text to script.txt
       await scriptApi.updateScriptText(scriptText);
       showSuccess('Script text saved successfully.');
 
-      // 2. Run AI breakdown
       const breakdownResult = await breakdownScript(scriptText);
 
       if (breakdownResult) {
-        // 3. Save structured data to script.json
         await updateScript(breakdownResult);
         showSuccess('Script breakdown complete and saved.');
       }
@@ -132,7 +130,6 @@ export const Script: React.FC = () => {
 
     setChatMessages(prev => [...prev, userMessage]);
 
-    // Simulate AI response
     setTimeout(() => {
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -160,6 +157,12 @@ export const Script: React.FC = () => {
     await updateScene(sceneId, { status });
   };
 
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: FileText },
+    { id: 'editor', label: 'Script Editor', icon: Edit },
+    { id: 'breakdown', label: 'Scene Breakdown', icon: Zap },
+  ];
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -176,8 +179,63 @@ export const Script: React.FC = () => {
         transition={{ duration: 0.5 }}
         className="space-y-4 sm:space-y-6"
       >
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* ... (Header) */}
+
+        {/* ... (Tabs) */}
+
+        {/* ... (Tab Content) */}
+
+        {/* Upload Script Modal */}
+        <Modal
+          isOpen={showUploadModal}
+          onClose={() => setShowUploadModal(false)}
+          title="Upload Script"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+              <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                {uploadedFileName || 'Or drag and drop a script file'}
+              </p>
+              <input
+                type="file"
+                accept=".pdf"
+                onChange={handleFileUpload}
+                className="hidden"
+                id="modal-script-upload"
+              />
+              <label htmlFor="modal-script-upload" className="cursor-pointer">
+                <Button as="span" variant="secondary" size="sm">
+                  Choose File
+                </Button>
+              </label>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowUploadModal(false);
+                  setSelectedFile(null);
+                  setUploadedFileName(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => selectedFile && handlePdfUpload(selectedFile)}
+                loading={aiLoading}
+                disabled={!selectedFile}
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Analyze with AI
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
               Script Management
@@ -455,7 +513,7 @@ export const Script: React.FC = () => {
                     <>
                       <input
                         type="file"
-                        accept=".txt,.pdf,.doc,.docx"
+                        accept=".pdf"
                         onChange={handleFileUpload}
                         className="hidden"
                         id="script-upload"
@@ -669,56 +727,6 @@ export const Script: React.FC = () => {
           </motion.div>
         )}
 
-        {/* Upload Script Modal */}
-        <Modal
-          isOpen={showUploadModal}
-          onClose={() => setShowUploadModal(false)}
-          title="Upload Script"
-          size="lg"
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Script Content
-              </label>
-              <textarea
-                value={scriptText}
-                onChange={(e) => setScriptText(e.target.value)}
-                rows={12}
-                className="input-field resize-none"
-                placeholder="Paste your script content here or upload a file..."
-              />
-            </div>
-            
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-              <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                Or drag and drop a script file
-              </p>
-              <Button variant="secondary" size="sm">
-                Choose File
-              </Button>
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <Button
-                variant="secondary"
-                onClick={() => setShowUploadModal(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleScriptUpload}
-                loading={aiLoading}
-                disabled={!scriptText.trim()}
-              >
-                <Zap className="h-4 w-4 mr-2" />
-                Analyze with AI
-              </Button>
-            </div>
-          </div>
-        </Modal>
-
         {/* AI Breakdown Results Modal */}
         <Modal
           isOpen={showBreakdownModal}
@@ -862,6 +870,7 @@ export const Script: React.FC = () => {
             </form>
           </motion.div>
         )}
+
       </motion.div>
     </RoleGuard>
   );

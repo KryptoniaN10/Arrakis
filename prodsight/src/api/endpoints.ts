@@ -169,6 +169,17 @@ export const vfxApi = {
     }),
 };
 
+export const analysisApi = {
+  analyzeScript: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.post('/analysis/script', formData);
+  },
+  analyzeScriptText: (text: string) => {
+    return apiClient.post('/analysis/script/text', { text });
+  },
+};
+
 export const assetsApi = {
   uploadAsset: async (file: File): Promise<{ success: boolean; url: string; message: string }> => {
     // Simulate file upload

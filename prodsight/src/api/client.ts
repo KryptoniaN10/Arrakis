@@ -60,11 +60,24 @@ class ApiClient {
     return this.request<T>(endpoint, { method: 'GET' });
   }
 
-  async post<T>(endpoint: string, data: T): Promise<ApiResponse<any>> {
-    return this.request(endpoint, {
+  async post<T>(endpoint: string, data: T | FormData, options: RequestInit = {}): Promise<ApiResponse<any>> {
+    const config: RequestInit = {
       method: 'POST',
-      body: JSON.stringify(data),
-    });
+      ...options,
+    };
+
+    if (data instanceof FormData) {
+      config.body = data;
+      // Let browser set Content-Type for FormData
+    } else {
+      config.body = JSON.stringify(data);
+      if (!config.headers) {
+        config.headers = {};
+      }
+      (config.headers as any)['Content-Type'] = 'application/json';
+    }
+
+    return this.request(endpoint, config);
   }
 
   async put<T>(endpoint: string, data: T): Promise<ApiResponse<any>> {
