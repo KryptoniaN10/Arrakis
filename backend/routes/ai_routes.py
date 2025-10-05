@@ -1,11 +1,11 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, make_response
 import os
 import json
 from typing import List, Dict, Any, Tuple
 import re
 from collections import defaultdict
 from utils.gemini_scheduler import GeminiScheduler
-from utils.schedule_sync import ensure_scene_titles_updated
+from utils.schedule_sync import ensure_scene_titles_updated, create_shooting_schedule_from_script
 
 # Create blueprint
 ai_bp = Blueprint('ai', __name__)
@@ -275,9 +275,13 @@ def generate_gemini_schedule():
     This is the main endpoint for the "Generate AI Schedule" button
     """
     try:
-        # Ensure shooting_schedule.json is synced from the latest script.json before generation
+        # Rebuild shooting_schedule.json from the latest script.json for real-time sync
         try:
-            ensure_scene_titles_updated()
+            # Prefer full regeneration to capture adds/edits/removals
+            created = create_shooting_schedule_from_script()
+            if not created:
+                # Fallback: at least sync titles if regeneration failed
+                ensure_scene_titles_updated()
         except Exception:
             # Non-fatal: continue even if sync fails; downstream will handle missing data
             pass
@@ -447,4 +451,163 @@ def sync_scene_titles():
         return jsonify({
             'status': 'error',
             'message': f'Scene title sync failed: {str(e)}'
+        }), 500
+
+
+@ai_bp.route('/generate_call_sheet', methods=['POST'])
+def generate_call_sheet():
+    """
+    Generate a call sheet JSON from a provided schedule event payload.
+    Expects fields: id, date, startTime, endTime, location, scenes[], cast[], crew[], notes, status.
+    """
+    try:
+        data = request.get_json() or {}
+        if not data:
+            return jsonify({
+                'status': 'error',
+                'message': 'No event data provided'
+            }), 400
+
+        # Basic normalization
+        event_date_iso = None
+        try:
+            event_date_iso = (data.get('date') and str(data.get('date'))) or None
+        except Exception:
+            event_date_iso = None
+
+        scenes = data.get('scenes', []) or []
+        cast = data.get('cast', []) or []
+        crew = data.get('crew', []) or []
+
+        # Build call sheet structure compatible with frontend components
+        call_sheet = {
+            'id': data.get('id', 'call-sheet-1'),
+            'date': event_date_iso,
+            'shootDay': data.get('shootDay') or 1,
+            'title': f"Call Sheet - {data.get('location', 'Location')}",
+            'locations': [
+                {
+                    'name': data.get('location', 'Unknown'),
+                    'address': data.get('address', ''),
+                    'arrivalTime': data.get('startTime', '09:00')
+                }
+            ],
+            'scenes': [
+                {
+                    'number': s.get('number') if isinstance(s.get('number'), str) else str(s.get('number', '')),
+                    'title': s.get('title') or s.get('description') or 'Untitled Scene',
+                    'location': s.get('location', data.get('location', 'Unknown')),
+                    'estimatedTime': f"{s.get('estimatedDuration', 1)}h"
+                } for s in scenes
+            ],
+            'cast': [
+                {
+                    'name': c if isinstance(c, str) else c.get('name', ''),
+                    'callTime': data.get('startTime', '09:00'),
+                    'wrapTime': data.get('endTime', '18:00'),
+                    'role': (c if isinstance(c, str) else c.get('role')) or 'Actor'
+                } for c in cast
+            ],
+            'crew': [
+                {
+                    'name': m if isinstance(m, str) else m.get('name', ''),
+                    'callTime': data.get('startTime', '09:00'),
+                    'department': (m if isinstance(m, str) else m.get('department')) or 'Crew'
+                } for m in crew
+            ],
+            'equipment': list({e for s in scenes for e in (s.get('equipment', []) or [])}),
+            'weather': {
+                'forecast': 'Clear',
+                'backup': 'Indoor backup if weather changes'
+            },
+            'notes': data.get('notes', ''),
+            'status': data.get('status', 'draft')
+        }
+
+        # Optional: return as human-readable text if requested
+        fmt = (request.args.get('format') or (isinstance(data, dict) and data.get('format'))) or 'json'
+        if isinstance(fmt, str):
+            fmt = fmt.lower()
+
+        if fmt in ('text', 'txt', 'plain'):
+            # Create a structured text call sheet
+            def section(title: str) -> str:
+                return f"\n{title}\n" + ("-" * len(title)) + "\n"
+
+            lines = []
+            title_line = call_sheet.get('title') or 'Call Sheet'
+            lines.append(title_line)
+            lines.append('=' * len(title_line))
+            lines.append("")
+
+            # Header
+            lines.append(f"Date: {call_sheet.get('date') or ''}")
+            if call_sheet.get('locations'):
+                primary_loc = call_sheet['locations'][0]
+                lines.append(f"Location: {primary_loc.get('name', '')}")
+                if primary_loc.get('address'):
+                    lines.append(f"Address: {primary_loc.get('address')}")
+                lines.append(f"Call Time: {primary_loc.get('arrivalTime', '')}")
+            lines.append("")
+
+            # Scenes
+            lines.append(section('SCENES'))
+            if call_sheet.get('scenes'):
+                for s in call_sheet['scenes']:
+                    lines.append(f"Scene {s.get('number','')}: {s.get('title','')}")
+                    lines.append(f"  Location: {s.get('location','')} | Est: {s.get('estimatedTime','')}")
+            else:
+                lines.append("No scenes listed")
+
+            # Cast
+            lines.append(section('CAST'))
+            if call_sheet.get('cast'):
+                for c in call_sheet['cast']:
+                    lines.append(f"- {c.get('name','')}  ({c.get('role','')})  {c.get('callTime','')} - {c.get('wrapTime','')}")
+            else:
+                lines.append("No cast listed")
+
+            # Crew
+            lines.append(section('CREW'))
+            if call_sheet.get('crew'):
+                for m in call_sheet['crew']:
+                    lines.append(f"- {m.get('name','')}  [{m.get('department','')}], Call: {m.get('callTime','')}")
+            else:
+                lines.append("No crew listed")
+
+            # Equipment
+            lines.append(section('EQUIPMENT'))
+            equipment = call_sheet.get('equipment') or []
+            if equipment:
+                for e in equipment:
+                    lines.append(f"- {e}")
+            else:
+                lines.append("No equipment listed")
+
+            # Weather
+            lines.append(section('WEATHER'))
+            weather = call_sheet.get('weather') or {}
+            lines.append(f"Forecast: {weather.get('forecast','')}")
+            if weather.get('backup'):
+                lines.append(f"Backup: {weather.get('backup')}")
+
+            # Notes
+            if call_sheet.get('notes'):
+                lines.append(section('NOTES'))
+                lines.append(call_sheet['notes'])
+
+            text_output = "\n".join(lines) + "\n"
+            resp = make_response(text_output)
+            resp.headers['Content-Type'] = 'text/plain; charset=utf-8'
+            return resp
+
+        return jsonify({
+            'status': 'success',
+            'call_sheet': call_sheet
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to generate call sheet: {str(e)}'
         }), 500

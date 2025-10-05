@@ -4,7 +4,7 @@
     {
       "characters": [],
       "day_night": "NIGHT",
-      "description": "An abandoned radio station's crumbling tower is revealed against a stormy night sky, periodically illuminated by lightning.",
+      "description": "A dilapidated radio tower is silhouetted against a stormy sky, intermittently lit by lightning.",
       "estimatedDuration": 1,
       "estimated_runtime_minutes": 1,
       "extras": [],
@@ -14,18 +14,16 @@
       "makeup_hair": [],
       "mood_tone": "ominous",
       "number": "1",
-      "props": [
-        "radio tower"
-      ],
+      "props": [],
       "scene_complexity": "Low",
-      "scene_description": "An abandoned radio station's crumbling tower is revealed against a stormy night sky, periodically illuminated by lightning.",
+      "scene_description": "A dilapidated radio tower is silhouetted against a stormy sky, intermittently lit by lightning.",
       "scene_number": 1,
       "scene_status": "Not Shot",
       "set_dressing": [
-        "crumbling structure"
+        "Crumbling radio tower"
       ],
       "sound_requirements": [
-        "thunder"
+        "Storm sounds"
       ],
       "special_equipment": [],
       "status": "Not Shot",
@@ -33,11 +31,11 @@
       "timeOfDay": "NIGHT",
       "title": "EXT. ABANDONED RADIO STATION - NIGHT",
       "vehicles_animals_fx": [
-        "stormy sky",
-        "lightning"
+        "Stormy sky",
+        "Lightning"
       ],
       "vfx": true,
-      "vfx_details": "Lightning and stormy sky effects.",
+      "vfx_details": "Simulated lightning and stormy sky",
       "vfx_required": true,
       "wardrobe": []
     }
